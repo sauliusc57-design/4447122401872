@@ -5,7 +5,17 @@ import { HelloWave } from '@/components/hello-wave';
 import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { seedHolidayPlannerIfEmpty } from '@/db/seed';
 import { Link } from 'expo-router';
+import { useEffect } from 'react';
+
+useEffect(() => {
+  const load = async () => {
+    await seedHolidayPlannerIfEmpty();
+  };
+
+  load();
+}, []);
 
 export default function HomeScreen() {
   return (
@@ -39,7 +49,7 @@ export default function HomeScreen() {
       <ThemedView style={styles.stepContainer}>
         <Link href="/modal">
           <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
+            <ThemedText type="subtitle">Step 2: hello bro</ThemedText>
           </Link.Trigger>
           <Link.Preview />
           <Link.Menu>
