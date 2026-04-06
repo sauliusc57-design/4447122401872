@@ -1,47 +1,53 @@
 import TripCard from '@/components/TripCard';
+import PrimaryButton from '@/components/ui/primary-button';
 import { db } from '@/db/client';
 import { trips } from '@/db/schema';
 import { seedHolidayPlannerIfEmpty } from '@/db/seed';
+import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { ScrollView, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-type Trip = {
-  id: number;
-  userId: number;
-  title: string;
-  destination: string;
-  startDate: string;
-  endDate: string;
-  notes: string | null;
-  createdAt: string;
-};
+type Trip = typeof trips.$inferSelect;
 
 export default function IndexScreen() {
   const router = useRouter();
   const [tripRows, setTripRows] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadTrips = async () => {
-      await seedHolidayPlannerIfEmpty();
-      const rows = await db.select().from(trips);
-      setTripRows(rows);
-      setLoading(false);
-    };
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
 
-    loadTrips();
-  }, []);
+      const loadTrips = async () => {
+        setLoading(true);
+        await seedHolidayPlannerIfEmpty();
+        const rows = await db.select().from(trips);
+
+        if (active) {
+          setTripRows(rows);
+          setLoading(false);
+        }
+      };
+
+      loadTrips();
+
+      return () => {
+        active = false;
+      };
+    }, [])
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <Text style={styles.title}>My Trips</Text>
       <Text style={styles.subtitle}>{tripRows.length} trips saved</Text>
 
-      <View style={styles.buttonRow}>
-        <Text style={styles.placeholderButton}>Add Trip</Text>
-      </View>
+      <PrimaryButton
+        label="Add Trip"
+        onPress={() => router.push('/trip/add')}
+      />
 
       {loading ? (
         <Text style={styles.message}>Loading trips...</Text>
@@ -50,10 +56,7 @@ export default function IndexScreen() {
       ) : (
         <ScrollView contentContainerStyle={styles.listContent}>
           {tripRows.map((trip) => (
-            <TripCard
-              key={trip.id}
-              trip={trip}
-            />
+            <TripCard key={trip.id} trip={trip} />
           ))}
         </ScrollView>
       )}
@@ -79,20 +82,9 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 14,
   },
-  buttonRow: {
-    marginBottom: 10,
-  },
-  placeholderButton: {
-    backgroundColor: '#0F172A',
-    borderRadius: 10,
-    color: '#FFFFFF',
-    overflow: 'hidden',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
   listContent: {
     paddingBottom: 24,
-    paddingTop: 8,
+    paddingTop: 12,
   },
   message: {
     color: '#475569',
