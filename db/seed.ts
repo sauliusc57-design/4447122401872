@@ -1,14 +1,10 @@
 import { db } from './client';
 import { activities, categories, targets, trips, users } from './schema';
-// If your file is actually named schemas.ts, change './schema' to './schemas'
 
 export async function seedHolidayPlannerIfEmpty() {
   const existingTrips = await db.select().from(trips);
 
-  console.log('existingTrips:', existingTrips);
-
   if (existingTrips.length > 0) {
-    console.log('Seed skipped because trips already exist');
     return;
   }
 
@@ -25,25 +21,25 @@ export async function seedHolidayPlannerIfEmpty() {
   await db.insert(categories).values([
     {
       userId: 1,
-      name: 'Sightseeing',
+      name: 'City Break',
       color: '#4F46E5',
-      icon: 'camera',
+      icon: 'map',
     },
     {
       userId: 1,
-      name: 'Food',
+      name: 'Food Trip',
       color: '#F59E0B',
       icon: 'restaurant',
     },
     {
       userId: 1,
-      name: 'Transport',
+      name: 'Adventure',
       color: '#10B981',
-      icon: 'bus',
+      icon: 'compass',
     },
     {
       userId: 1,
-      name: 'Relaxing',
+      name: 'Relaxation',
       color: '#EC4899',
       icon: 'bed',
     },
@@ -52,6 +48,7 @@ export async function seedHolidayPlannerIfEmpty() {
   await db.insert(trips).values([
     {
       userId: 1,
+      categoryId: 1,
       title: 'Weekend in Paris',
       destination: 'Paris, France',
       startDate: '2026-06-12',
@@ -62,6 +59,7 @@ export async function seedHolidayPlannerIfEmpty() {
     },
     {
       userId: 1,
+      categoryId: 2,
       title: 'Summer in Rome',
       destination: 'Rome, Italy',
       startDate: '2026-08-03',

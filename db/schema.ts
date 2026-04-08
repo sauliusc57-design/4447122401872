@@ -7,24 +7,25 @@ export const users = sqliteTable('users', {
   createdAt: text('created_at').notNull(),
 });
 
-export const trips = sqliteTable('trips', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  userId: integer('user_id').notNull(),
-  title: text('title').notNull(),
-  destination: text('destination').notNull(),
-  startDate: text('start_date').notNull(),
-  endDate: text('end_date').notNull(),
-  notes: text('notes'),
-  imageUri: text('image_uri'), // add this
-  createdAt: text('created_at').notNull(),
-});
-
 export const categories = sqliteTable('categories', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   userId: integer('user_id').notNull(),
   name: text('name').notNull(),
   color: text('color').notNull(),
   icon: text('icon').notNull(),
+});
+
+export const trips = sqliteTable('trips', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').notNull(),
+  categoryId: integer('category_id'),
+  title: text('title').notNull(),
+  destination: text('destination').notNull(),
+  startDate: text('start_date').notNull(),
+  endDate: text('end_date').notNull(),
+  notes: text('notes'),
+  imageUri: text('image_uri'),
+  createdAt: text('created_at').notNull(),
 });
 
 export const activities = sqliteTable('activities', {

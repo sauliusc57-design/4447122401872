@@ -1,22 +1,24 @@
+import CategoryPicker from '@/components/ui/category-picker';
 import FormField from '@/components/ui/form-field';
 import PrimaryButton from '@/components/ui/primary-button';
 import { db } from '@/db/client';
-import { trips } from '@/db/schema';
+import { categories, trips } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-    Alert,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type Trip = typeof trips.$inferSelect;
+type Category = typeof categories.$inferSelect;
 
 const seededImages: Record<string, any> = {
   'Weekend in Paris': require('../../../assets/images/trips/Paris.jpg'),
@@ -30,6 +32,7 @@ export default function EditTripScreen() {
 
   const [loading, setLoading] = useState(true);
   const [existingTrip, setExistingTrip] = useState<Trip | null>(null);
+  const [categoryRows, setCategoryRows] = useState<Category[]>([]);
 
   const [title, setTitle] = useState('');
   const [destination, setDestination] = useState('');
@@ -37,14 +40,21 @@ export default function EditTripScreen() {
   const [endDate, setEndDate] = useState('');
   const [notes, setNotes] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
 
   useEffect(() => {
     const loadTrip = async () => {
       if (!id) return;
 
-      const rows = await db.select().from(trips).where(eq(trips.id, Number(id)));
-      const trip = rows[0] ?? null;
+      const [tripRows, categoryList] = await Promise.all([
+        db.select().from(trips).where(eq(trips.id, Number(id))),
+        db.select().from(categories),
+      ]);
+
+      const trip = tripRows[0] ?? null;
+
       setExistingTrip(trip);
+      setCategoryRows(categoryList);
 
       if (trip) {
         setTitle(trip.title);
@@ -53,6 +63,7 @@ export default function EditTripScreen() {
         setEndDate(trip.endDate);
         setNotes(trip.notes ?? '');
         setImageUri(trip.imageUri ?? null);
+        setSelectedCategoryId(trip.categoryId ?? null);
       }
 
       setLoading(false);
@@ -95,9 +106,15 @@ export default function EditTripScreen() {
       return;
     }
 
+    if (!selectedCategoryId) {
+      Alert.alert('Missing category', 'Please select a category for the trip.');
+      return;
+    }
+
     await db
       .update(trips)
       .set({
+        categoryId: selectedCategoryId,
         title: title.trim(),
         destination: destination.trim(),
         startDate: startDate.trim(),
@@ -153,6 +170,13 @@ export default function EditTripScreen() {
         ) : (
           <Text style={styles.helperText}>No image selected yet.</Text>
         )}
+
+        <CategoryPicker
+          categories={categoryRows}
+          selectedCategoryId={selectedCategoryId}
+          onSelect={setSelectedCategoryId}
+          label="Trip Category"
+        />
 
         <FormField
           label="Trip Title"

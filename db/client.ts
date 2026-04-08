@@ -11,6 +11,14 @@ sqlite.execSync(`
     created_at TEXT NOT NULL
   );
 
+  CREATE TABLE IF NOT EXISTS categories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    color TEXT NOT NULL,
+    icon TEXT NOT NULL
+  );
+
   CREATE TABLE IF NOT EXISTS trips (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
@@ -21,14 +29,6 @@ sqlite.execSync(`
     notes TEXT,
     image_uri TEXT,
     created_at TEXT NOT NULL
-  );
-
-  CREATE TABLE IF NOT EXISTS categories (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    name TEXT NOT NULL,
-    color TEXT NOT NULL,
-    icon TEXT NOT NULL
   );
 
   CREATE TABLE IF NOT EXISTS activities (
@@ -55,5 +55,17 @@ sqlite.execSync(`
     created_at TEXT NOT NULL
   );
 `);
+
+const tripColumns = sqlite.getAllSync(`PRAGMA table_info(trips)`) as Array<{
+  name: string;
+}>;
+
+const hasCategoryId = tripColumns.some((column) => column.name === 'category_id');
+
+if (!hasCategoryId) {
+  sqlite.execSync(`
+    ALTER TABLE trips ADD COLUMN category_id INTEGER;
+  `);
+}
 
 export const db = drizzle(sqlite);

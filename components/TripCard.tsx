@@ -4,6 +4,7 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 type Trip = {
   id: number;
   userId: number;
+  categoryId: number | null;
   title: string;
   destination: string;
   startDate: string;
@@ -13,8 +14,17 @@ type Trip = {
   createdAt: string;
 };
 
+type Category = {
+  id: number;
+  userId: number;
+  name: string;
+  color: string;
+  icon: string;
+};
+
 type Props = {
   trip: Trip;
+  category: Category | null;
 };
 
 const seededImages: Record<string, any> = {
@@ -23,7 +33,7 @@ const seededImages: Record<string, any> = {
   'Week in London': require('../assets/images/trips/London.jpg'),
 };
 
-export default function TripCard({ trip }: Props) {
+export default function TripCard({ trip, category }: Props) {
   const router = useRouter();
 
   const fallbackImage = seededImages[trip.title];
@@ -61,6 +71,18 @@ export default function TripCard({ trip }: Props) {
       <Text style={styles.meta}>
         {trip.startDate} → {trip.endDate}
       </Text>
+
+      <View style={styles.categoryRow}>
+        <View
+          style={[
+            styles.categoryDot,
+            { backgroundColor: category?.color ?? '#CBD5E1' },
+          ]}
+        />
+        <Text style={styles.categoryText}>
+          {category ? category.name : 'No category assigned'}
+        </Text>
+      </View>
 
       {trip.notes ? <Text style={styles.notes}>{trip.notes}</Text> : null}
     </Pressable>
@@ -108,6 +130,22 @@ const styles = StyleSheet.create({
     color: '#475569',
     fontSize: 14,
     marginBottom: 2,
+  },
+  categoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  categoryDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 999,
+    marginRight: 8,
+  },
+  categoryText: {
+    color: '#334155',
+    fontSize: 14,
+    fontWeight: '500',
   },
   notes: {
     color: '#334155',

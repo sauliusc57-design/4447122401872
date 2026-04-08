@@ -1,6 +1,6 @@
 import PrimaryButton from '@/components/ui/primary-button';
 import { db } from '@/db/client';
-import { trips } from '@/db/schema';
+import { categories, trips } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -8,6 +8,7 @@ import { Alert, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type Trip = typeof trips.$inferSelect;
+type Category = typeof categories.$inferSelect;
 
 const seededImages: Record<string, any> = {
   'Weekend in Paris': require('../../assets/images/trips/Paris.jpg'),
@@ -20,6 +21,7 @@ export default function TripDetailScreen() {
   const router = useRouter();
   const [trip, setTrip] = useState<Trip | null>(null);
   const [loading, setLoading] = useState(true);
+  const [category, setCategory] = useState<Category | null>(null);
 
   useEffect(() => {
     const loadTrip = async () => {
@@ -33,7 +35,20 @@ export default function TripDetailScreen() {
         .from(trips)
         .where(eq(trips.id, Number(id)));
 
-      setTrip(rows[0] ?? null);
+      const foundTrip = rows[0] ?? null;
+      setTrip(foundTrip);
+
+      if (foundTrip?.categoryId) {
+        const categoryRows = await db
+          .select()
+          .from(categories)
+          .where(eq(categories.id, foundTrip.categoryId));
+
+        setCategory(categoryRows[0] ?? null);
+      } else {
+        setCategory(null);
+      }
+
       setLoading(false);
     };
 
@@ -103,6 +118,21 @@ export default function TripDetailScreen() {
 
         <Text style={styles.title}>{trip.title}</Text>
         <Text style={styles.destination}>{trip.destination}</Text>
+
+        <View style={styles.infoBox}>
+          <Text style={styles.infoLabel}>Category</Text>
+          <View style={styles.categoryRow}>
+            <View
+              style={[
+                styles.categoryDot,
+                { backgroundColor: category?.color ?? '#CBD5E1' },
+              ]}
+            />
+            <Text style={styles.infoValue}>
+              {category ? category.name : 'No category assigned'}
+            </Text>
+          </View>
+        </View>
 
         <View style={styles.infoBox}>
           <Text style={styles.infoLabel}>Start Date</Text>
@@ -215,5 +245,15 @@ const styles = StyleSheet.create({
     color: '#475569',
     fontSize: 16,
     textAlign: 'center',
+  },
+  categoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  categoryDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 999,
+    marginRight: 8,
   },
 });

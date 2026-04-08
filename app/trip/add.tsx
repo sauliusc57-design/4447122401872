@@ -1,19 +1,22 @@
+import CategoryPicker from '@/components/ui/category-picker';
 import FormField from '@/components/ui/form-field';
 import PrimaryButton from '@/components/ui/primary-button';
 import { db } from '@/db/client';
-import { trips } from '@/db/schema';
+import { categories, trips } from '@/db/schema';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-    Alert,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+type Category = typeof categories.$inferSelect;
 
 export default function AddTripScreen() {
   const router = useRouter();
@@ -24,6 +27,21 @@ export default function AddTripScreen() {
   const [endDate, setEndDate] = useState('');
   const [notes, setNotes] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const [categoryRows, setCategoryRows] = useState<Category[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      const rows = await db.select().from(categories);
+      setCategoryRows(rows);
+
+      if (rows.length > 0) {
+        setSelectedCategoryId(rows[0].id);
+      }
+    };
+
+    loadCategories();
+  }, []);
 
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -59,10 +77,16 @@ export default function AddTripScreen() {
       return;
     }
 
+    if (!selectedCategoryId) {
+      Alert.alert('Missing category', 'Please select a category for the trip.');
+      return;
+    }
+
     const now = new Date().toISOString();
 
     await db.insert(trips).values({
       userId: 1,
+      categoryId: selectedCategoryId,
       title: title.trim(),
       destination: destination.trim(),
       startDate: startDate.trim(),
@@ -92,6 +116,13 @@ export default function AddTripScreen() {
         ) : (
           <Text style={styles.helperText}>No image selected yet.</Text>
         )}
+
+        <CategoryPicker
+          categories={categoryRows}
+          selectedCategoryId={selectedCategoryId}
+          onSelect={setSelectedCategoryId}
+          label="Trip Category"
+        />
 
         <FormField
           label="Trip Title"
@@ -126,6 +157,7 @@ export default function AddTripScreen() {
           value={notes}
           onChangeText={setNotes}
           placeholder="Optional trip notes"
+          multiline
         />
 
         <View style={styles.buttonGroup}>

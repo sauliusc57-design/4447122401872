@@ -1,7 +1,7 @@
 import TripCard from '@/components/TripCard';
 import PrimaryButton from '@/components/ui/primary-button';
 import { db } from '@/db/client';
-import { trips } from '@/db/schema';
+import { categories, trips } from '@/db/schema';
 import { seedHolidayPlannerIfEmpty } from '@/db/seed';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
@@ -10,10 +10,12 @@ import { ScrollView, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type Trip = typeof trips.$inferSelect;
+type Category = typeof categories.$inferSelect;
 
 export default function IndexScreen() {
   const router = useRouter();
   const [tripRows, setTripRows] = useState<Trip[]>([]);
+  const [categoryRows, setCategoryRows] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
   useFocusEffect(
@@ -23,10 +25,15 @@ export default function IndexScreen() {
       const loadTrips = async () => {
         setLoading(true);
         await seedHolidayPlannerIfEmpty();
-        const rows = await db.select().from(trips);
+
+        const [tripData, categoryData] = await Promise.all([
+          db.select().from(trips),
+          db.select().from(categories),
+        ]);
 
         if (active) {
-          setTripRows(rows);
+          setTripRows(tripData);
+          setCategoryRows(categoryData);
           setLoading(false);
         }
       };
@@ -52,9 +59,14 @@ export default function IndexScreen() {
         <Text style={styles.message}>No trips added yet.</Text>
       ) : (
         <ScrollView contentContainerStyle={styles.listContent}>
-          {tripRows.map((trip) => (
-            <TripCard key={trip.id} trip={trip} />
-          ))}
+          {tripRows.map((trip) => {
+            const category =
+              trip.categoryId != null
+                ? categoryRows.find((item) => item.id === trip.categoryId) ?? null
+                : null;
+
+            return <TripCard key={trip.id} trip={trip} category={category} />;
+          })}
         </ScrollView>
       )}
     </SafeAreaView>
