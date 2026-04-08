@@ -2,9 +2,17 @@ import FormField from '@/components/ui/form-field';
 import PrimaryButton from '@/components/ui/primary-button';
 import { db } from '@/db/client';
 import { trips } from '@/db/schema';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+    Alert,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function AddTripScreen() {
@@ -15,10 +23,39 @@ export default function AddTripScreen() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [notes, setNotes] = useState('');
+  const [imageUri, setImageUri] = useState<string | null>(null);
+
+  const pickImage = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      Alert.alert('Permission needed', 'Please allow photo library access.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: false,
+      quality: 0.8,
+    });
+
+    if (result.canceled || !result.assets || result.assets.length === 0) {
+      return;
+    }
+
+    setImageUri(result.assets[0].uri);
+  };
 
   const saveTrip = async () => {
-    if (!title.trim() || !destination.trim() || !startDate.trim() || !endDate.trim()) {
-      Alert.alert('Missing details', 'Please complete title, destination, start date, and end date.');
+    if (
+      !title.trim() ||
+      !destination.trim() ||
+      !startDate.trim() ||
+      !endDate.trim()
+    ) {
+      Alert.alert(
+        'Missing details',
+        'Please complete title, destination, start date, and end date.'
+      );
       return;
     }
 
@@ -31,6 +68,7 @@ export default function AddTripScreen() {
       startDate: startDate.trim(),
       endDate: endDate.trim(),
       notes: notes.trim() ? notes.trim() : null,
+      imageUri,
       createdAt: now,
     });
 
@@ -42,6 +80,18 @@ export default function AddTripScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Add Trip</Text>
         <Text style={styles.subtitle}>Create a new holiday trip.</Text>
+
+        <PrimaryButton label="Choose Trip Image" onPress={pickImage} />
+
+        {imageUri ? (
+          <Image
+            source={{ uri: imageUri }}
+            style={styles.previewImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <Text style={styles.helperText}>No image selected yet.</Text>
+        )}
 
         <FormField
           label="Trip Title"
@@ -76,7 +126,6 @@ export default function AddTripScreen() {
           value={notes}
           onChangeText={setNotes}
           placeholder="Optional trip notes"
-          multiline
         />
 
         <View style={styles.buttonGroup}>
@@ -95,22 +144,34 @@ export default function AddTripScreen() {
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: '#F8FAFC',
     flex: 1,
+    backgroundColor: '#F8FAFC',
   },
   content: {
     padding: 18,
   },
   title: {
-    color: '#0F172A',
     fontSize: 28,
     fontWeight: '700',
+    color: '#0F172A',
     marginBottom: 4,
   },
   subtitle: {
-    color: '#475569',
     fontSize: 15,
+    color: '#475569',
     marginBottom: 18,
+  },
+  previewImage: {
+    width: '100%',
+    height: 180,
+    borderRadius: 12,
+    marginTop: 12,
+    marginBottom: 14,
+  },
+  helperText: {
+    color: '#64748B',
+    marginTop: 10,
+    marginBottom: 14,
   },
   buttonGroup: {
     marginTop: 8,

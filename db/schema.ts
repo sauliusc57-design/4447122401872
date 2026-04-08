@@ -15,6 +15,7 @@ export const trips = sqliteTable('trips', {
   startDate: text('start_date').notNull(),
   endDate: text('end_date').notNull(),
   notes: text('notes'),
+  imageUri: text('image_uri'), // add this
   createdAt: text('created_at').notNull(),
 });
 
