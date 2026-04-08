@@ -1,0 +1,250 @@
+import FormField from '@/components/ui/form-field';
+import PrimaryButton from '@/components/ui/primary-button';
+import { db } from '@/db/client';
+import { trips } from '@/db/schema';
+import { eq } from 'drizzle-orm';
+import * as ImagePicker from 'expo-image-picker';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import {
+    Alert,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+type Trip = typeof trips.$inferSelect;
+
+const seededImages: Record<string, any> = {
+  'Weekend in Paris': require('../../../assets/images/trips/Paris.jpg'),
+  'Summer in Rome': require('../../../assets/images/trips/Rome.jpg'),
+  'Week in London': require('../../../assets/images/trips/London.jpg'),
+};
+
+export default function EditTripScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
+
+  const [loading, setLoading] = useState(true);
+  const [existingTrip, setExistingTrip] = useState<Trip | null>(null);
+
+  const [title, setTitle] = useState('');
+  const [destination, setDestination] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [notes, setNotes] = useState('');
+  const [imageUri, setImageUri] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadTrip = async () => {
+      if (!id) return;
+
+      const rows = await db.select().from(trips).where(eq(trips.id, Number(id)));
+      const trip = rows[0] ?? null;
+      setExistingTrip(trip);
+
+      if (trip) {
+        setTitle(trip.title);
+        setDestination(trip.destination);
+        setStartDate(trip.startDate);
+        setEndDate(trip.endDate);
+        setNotes(trip.notes ?? '');
+        setImageUri(trip.imageUri ?? null);
+      }
+
+      setLoading(false);
+    };
+
+    loadTrip();
+  }, [id]);
+
+  const pickImage = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      Alert.alert('Permission needed', 'Please allow photo library access.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: false,
+      quality: 0.8,
+    });
+
+    if (result.canceled || !result.assets || result.assets.length === 0) {
+      return;
+    }
+
+    setImageUri(result.assets[0].uri);
+  };
+
+  const saveTrip = async () => {
+    if (
+      !title.trim() ||
+      !destination.trim() ||
+      !startDate.trim() ||
+      !endDate.trim()
+    ) {
+      Alert.alert(
+        'Missing details',
+        'Please complete title, destination, start date, and end date.'
+      );
+      return;
+    }
+
+    await db
+      .update(trips)
+      .set({
+        title: title.trim(),
+        destination: destination.trim(),
+        startDate: startDate.trim(),
+        endDate: endDate.trim(),
+        notes: notes.trim() ? notes.trim() : null,
+        imageUri,
+      })
+      .where(eq(trips.id, Number(id)));
+
+    router.back();
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <Text style={styles.message}>Loading trip...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (!existingTrip) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <Text style={styles.message}>Trip not found.</Text>
+      </SafeAreaView>
+    );
+  }
+
+  const fallbackImage = seededImages[existingTrip.title];
+  const hasValidLocalImage =
+    typeof imageUri === 'string' && imageUri.length > 0;
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView contentContainerStyle={styles.content}>
+        <Text style={styles.title}>Edit Trip</Text>
+        <Text style={styles.subtitle}>Update your saved trip details.</Text>
+
+        <PrimaryButton label="Choose New Image" onPress={pickImage} />
+
+        {hasValidLocalImage ? (
+          <Image
+            source={{ uri: imageUri! }}
+            style={styles.previewImage}
+            resizeMode="cover"
+          />
+        ) : fallbackImage ? (
+          <Image
+            source={fallbackImage}
+            style={styles.previewImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <Text style={styles.helperText}>No image selected yet.</Text>
+        )}
+
+        <FormField
+          label="Trip Title"
+          value={title}
+          onChangeText={setTitle}
+          placeholder="Weekend in Paris"
+        />
+
+        <FormField
+          label="Destination"
+          value={destination}
+          onChangeText={setDestination}
+          placeholder="Paris, France"
+        />
+
+        <FormField
+          label="Start Date"
+          value={startDate}
+          onChangeText={setStartDate}
+          placeholder="2026-06-12"
+        />
+
+        <FormField
+          label="End Date"
+          value={endDate}
+          onChangeText={setEndDate}
+          placeholder="2026-06-15"
+        />
+
+        <FormField
+          label="Notes"
+          value={notes}
+          onChangeText={setNotes}
+          placeholder="Optional trip notes"
+          multiline
+        />
+
+        <View style={styles.buttonGroup}>
+          <PrimaryButton label="Save Changes" onPress={saveTrip} />
+          <View style={styles.spacer} />
+          <PrimaryButton
+            label="Cancel"
+            variant="secondary"
+            onPress={() => router.back()}
+          />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safeArea: {
+    backgroundColor: '#F8FAFC',
+    flex: 1,
+  },
+  content: {
+    padding: 18,
+  },
+  title: {
+    color: '#0F172A',
+    fontSize: 28,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  subtitle: {
+    color: '#475569',
+    fontSize: 15,
+    marginBottom: 18,
+  },
+  previewImage: {
+    width: '100%',
+    height: 180,
+    borderRadius: 12,
+    marginTop: 12,
+    marginBottom: 14,
+  },
+  helperText: {
+    color: '#64748B',
+    marginTop: 10,
+    marginBottom: 14,
+  },
+  buttonGroup: {
+    marginTop: 8,
+  },
+  spacer: {
+    height: 10,
+  },
+  message: {
+    color: '#475569',
+    fontSize: 16,
+    paddingTop: 24,
+    textAlign: 'center',
+  },
+});

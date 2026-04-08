@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 type Trip = {
@@ -8,29 +9,47 @@ type Trip = {
   startDate: string;
   endDate: string;
   notes: string | null;
-  imageUri: string | null;
+  imageUri?: string | null;
   createdAt: string;
 };
 
 type Props = {
   trip: Trip;
-  onPress?: () => void;
 };
 
 const seededImages: Record<string, any> = {
   'Weekend in Paris': require('../assets/images/trips/Paris.jpg'),
   'Summer in Rome': require('../assets/images/trips/Rome.jpg'),
+  'Week in London': require('../assets/images/trips/London.jpg'),
 };
 
-export default function TripCard({ trip, onPress }: Props) {
+export default function TripCard({ trip }: Props) {
+  const router = useRouter();
+
   const fallbackImage = seededImages[trip.title];
+  const hasValidLocalImage =
+    typeof trip.imageUri === 'string' && trip.imageUri.length > 0;
 
   return (
-    <Pressable onPress={onPress} style={styles.card}>
-      {trip.imageUri ? (
-        <Image source={{ uri: trip.imageUri }} style={styles.image} />
+    <Pressable
+      accessibilityLabel={`${trip.title}, ${trip.destination}, view trip details`}
+      accessibilityRole="button"
+      onPress={() =>
+        router.push({
+          pathname: '/trip/[id]',
+          params: { id: String(trip.id) },
+        })
+      }
+      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+    >
+      {hasValidLocalImage ? (
+        <Image
+          source={{ uri: trip.imageUri! }}
+          style={styles.image}
+          resizeMode="cover"
+        />
       ) : fallbackImage ? (
-        <Image source={fallbackImage} style={styles.image} />
+        <Image source={fallbackImage} style={styles.image} resizeMode="cover" />
       ) : (
         <View style={styles.placeholder}>
           <Text style={styles.placeholderText}>No Image</Text>
@@ -42,6 +61,7 @@ export default function TripCard({ trip, onPress }: Props) {
       <Text style={styles.meta}>
         {trip.startDate} → {trip.endDate}
       </Text>
+
       {trip.notes ? <Text style={styles.notes}>{trip.notes}</Text> : null}
     </Pressable>
   );
@@ -49,12 +69,15 @@ export default function TripCard({ trip, onPress }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
+    backgroundColor: '#FFFFFF',
     borderColor: '#CBD5E1',
     borderRadius: 12,
-    padding: 14,
+    borderWidth: 1,
     marginBottom: 12,
+    padding: 14,
+  },
+  pressed: {
+    opacity: 0.9,
   },
   image: {
     width: '100%',
@@ -73,18 +96,22 @@ const styles = StyleSheet.create({
   },
   placeholderText: {
     color: '#64748B',
+    fontSize: 14,
   },
   title: {
+    color: '#0F172A',
     fontSize: 18,
     fontWeight: '700',
-    color: '#0F172A',
+    marginBottom: 4,
   },
   meta: {
     color: '#475569',
-    marginTop: 2,
+    fontSize: 14,
+    marginBottom: 2,
   },
   notes: {
     color: '#334155',
+    fontSize: 14,
     marginTop: 8,
   },
 });

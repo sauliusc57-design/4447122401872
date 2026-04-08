@@ -57,6 +57,7 @@ export async function seedHolidayPlannerIfEmpty() {
       startDate: '2026-06-12',
       endDate: '2026-06-15',
       notes: 'City break with museums and food spots',
+      imageUri: null,
       createdAt: now,
     },
     {
@@ -66,6 +67,7 @@ export async function seedHolidayPlannerIfEmpty() {
       startDate: '2026-08-03',
       endDate: '2026-08-10',
       notes: 'Historic sites and local restaurants',
+      imageUri: null,
       createdAt: now,
     },
   ]);

@@ -44,10 +44,7 @@ export default function IndexScreen() {
       <Text style={styles.title}>My Trips</Text>
       <Text style={styles.subtitle}>{tripRows.length} trips saved</Text>
 
-      <PrimaryButton
-        label="Add Trip"
-        onPress={() => router.push('/trip/add')}
-      />
+      <PrimaryButton label="Add Trip" onPress={() => router.push('/trip/add')} />
 
       {loading ? (
         <Text style={styles.message}>Loading trips...</Text>
