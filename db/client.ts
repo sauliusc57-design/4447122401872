@@ -1,3 +1,4 @@
+// db/client.ts
 import { drizzle } from 'drizzle-orm/expo-sqlite';
 import { openDatabaseSync } from 'expo-sqlite';
 
@@ -22,6 +23,7 @@ sqlite.execSync(`
   CREATE TABLE IF NOT EXISTS trips (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
+    category_id INTEGER,
     title TEXT NOT NULL,
     destination TEXT NOT NULL,
     start_date TEXT NOT NULL,

@@ -1,3 +1,4 @@
+// db/seed.ts
 import { db } from './client';
 import { activities, categories, targets, trips, users } from './schema';
 
@@ -78,8 +79,19 @@ export async function seedHolidayPlannerIfEmpty() {
       activityDate: '2026-06-13',
       metricValue: 120,
       metricType: 'minutes',
-      status: 'planned',
-      notes: 'Book tickets in advance',
+      status: 'completed',
+      notes: 'Booked morning slot',
+      createdAt: now,
+    },
+    {
+      tripId: 1,
+      categoryId: 1,
+      title: 'Louvre visit',
+      activityDate: '2026-06-14',
+      metricValue: 90,
+      metricType: 'minutes',
+      status: 'completed',
+      notes: 'Focused on main highlights',
       createdAt: now,
     },
     {
@@ -101,7 +113,7 @@ export async function seedHolidayPlannerIfEmpty() {
       metricValue: 3,
       metricType: 'count',
       status: 'completed',
-      notes: 'Use for museum hopping',
+      notes: 'Used around the city',
       createdAt: now,
     },
     {
@@ -111,7 +123,7 @@ export async function seedHolidayPlannerIfEmpty() {
       activityDate: '2026-08-04',
       metricValue: 150,
       metricType: 'minutes',
-      status: 'planned',
+      status: 'completed',
       notes: 'Morning slot preferred',
       createdAt: now,
     },
@@ -122,8 +134,19 @@ export async function seedHolidayPlannerIfEmpty() {
       activityDate: '2026-08-05',
       metricValue: 180,
       metricType: 'minutes',
-      status: 'planned',
-      notes: 'Check group availability',
+      status: 'completed',
+      notes: 'Excellent local chef',
+      createdAt: now,
+    },
+    {
+      tripId: 2,
+      categoryId: 2,
+      title: 'Evening food tour',
+      activityDate: '2026-08-06',
+      metricValue: 120,
+      metricType: 'minutes',
+      status: 'completed',
+      notes: 'Multiple tastings included',
       createdAt: now,
     },
     {
@@ -151,11 +174,29 @@ export async function seedHolidayPlannerIfEmpty() {
     },
     {
       userId: 1,
+      tripId: 1,
+      categoryId: null,
+      period: 'weekly',
+      metricType: 'count',
+      targetValue: 4,
+      createdAt: now,
+    },
+    {
+      userId: 1,
       tripId: 2,
       categoryId: 2,
       period: 'weekly',
       metricType: 'minutes',
       targetValue: 300,
+      createdAt: now,
+    },
+    {
+      userId: 1,
+      tripId: 2,
+      categoryId: null,
+      period: 'monthly',
+      metricType: 'minutes',
+      targetValue: 600,
       createdAt: now,
     },
   ]);

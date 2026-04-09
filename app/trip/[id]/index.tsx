@@ -1,59 +1,80 @@
+// app/trip/[id].tsx
+import TargetProgressCard from '@/components/TargetProgressCard';
 import PrimaryButton from '@/components/ui/primary-button';
 import { db } from '@/db/client';
-import { categories, trips } from '@/db/schema';
+import { activities, categories, targets, trips } from '@/db/schema';
+import { calculateTargetProgress } from '@/lib/target-progress';
+import { useFocusEffect } from '@react-navigation/native';
 import { eq } from 'drizzle-orm';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Alert, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type Trip = typeof trips.$inferSelect;
 type Category = typeof categories.$inferSelect;
+type Activity = typeof activities.$inferSelect;
+type Target = typeof targets.$inferSelect;
 
 const seededImages: Record<string, any> = {
-  'Weekend in Paris': require('../../assets/images/trips/Paris.jpg'),
-  'Summer in Rome': require('../../assets/images/trips/Rome.jpg'),
-  'Week in London': require('../../assets/images/trips/London.jpg'),
+  'Weekend in Paris': require('../../../assets/images/trips/Paris.jpg'),
+  'Summer in Rome': require('../../../assets/images/trips/Rome.jpg'),
+  'Week in London': require('../../../assets/images/trips/London.jpg'),
 };
 
 export default function TripDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+
   const [trip, setTrip] = useState<Trip | null>(null);
-  const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState<Category | null>(null);
+  const [categoryRows, setCategoryRows] = useState<Category[]>([]);
+  const [activityRows, setActivityRows] = useState<Activity[]>([]);
+  const [targetRows, setTargetRows] = useState<Target[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadTrip = async () => {
-      if (!id) {
-        setLoading(false);
-        return;
-      }
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
 
-      const rows = await db
-        .select()
-        .from(trips)
-        .where(eq(trips.id, Number(id)));
+      const loadTrip = async () => {
+        if (!id) {
+          if (active) setLoading(false);
+          return;
+        }
 
-      const foundTrip = rows[0] ?? null;
-      setTrip(foundTrip);
+        setLoading(true);
 
-      if (foundTrip?.categoryId) {
-        const categoryRows = await db
-          .select()
-          .from(categories)
-          .where(eq(categories.id, foundTrip.categoryId));
+        const [tripRows, allCategories, allActivities, allTargets] = await Promise.all([
+          db.select().from(trips).where(eq(trips.id, Number(id))),
+          db.select().from(categories),
+          db.select().from(activities),
+          db.select().from(targets).where(eq(targets.tripId, Number(id))),
+        ]);
 
-        setCategory(categoryRows[0] ?? null);
-      } else {
-        setCategory(null);
-      }
+        const foundTrip = tripRows[0] ?? null;
+        const foundCategory =
+          foundTrip?.categoryId != null
+            ? allCategories.find((item) => item.id === foundTrip.categoryId) ?? null
+            : null;
 
-      setLoading(false);
-    };
+        if (active) {
+          setTrip(foundTrip);
+          setCategory(foundCategory);
+          setCategoryRows(allCategories);
+          setActivityRows(allActivities);
+          setTargetRows(allTargets);
+          setLoading(false);
+        }
+      };
 
-    loadTrip();
-  }, [id]);
+      loadTrip();
+
+      return () => {
+        active = false;
+      };
+    }, [id])
+  );
 
   const deleteTrip = () => {
     if (!trip) return;
@@ -69,6 +90,30 @@ export default function TripDetailScreen() {
           onPress: async () => {
             await db.delete(trips).where(eq(trips.id, trip.id));
             router.back();
+          },
+        },
+      ]
+    );
+  };
+
+  const deleteTarget = (target: Target) => {
+    Alert.alert(
+      'Delete Target',
+      'Are you sure you want to delete this target?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            await db.delete(targets).where(eq(targets.id, target.id));
+
+            const refreshedTargets = await db
+              .select()
+              .from(targets)
+              .where(eq(targets.tripId, Number(id)));
+
+            setTargetRows(refreshedTargets);
           },
         },
       ]
@@ -98,6 +143,21 @@ export default function TripDetailScreen() {
   const fallbackImage = seededImages[trip.title];
   const hasImage =
     typeof trip.imageUri === 'string' && trip.imageUri.trim().length > 0;
+
+  const tripActivities = activityRows.filter((activity) => activity.tripId === trip.id);
+
+  const completedActivities = tripActivities.filter(
+    (activity) => activity.status === 'completed'
+  );
+
+  const progressItems = targetRows.map((target) =>
+    calculateTargetProgress({
+      trip,
+      target,
+      activities: activityRows,
+      categories: categoryRows,
+    })
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -152,6 +212,62 @@ export default function TripDetailScreen() {
               : 'No notes added.'}
           </Text>
         </View>
+
+        <View style={styles.infoBox}>
+          <Text style={styles.infoLabel}>Activity Summary</Text>
+          <Text style={styles.infoValue}>
+            {tripActivities.length} activities · {completedActivities.length} completed
+          </Text>
+        </View>
+
+        <View style={styles.sectionHeader}>
+          <View>
+            <Text style={styles.sectionTitle}>Targets</Text>
+            <Text style={styles.sectionSubtitle}>
+              Progress is based on completed activities only.
+            </Text>
+          </View>
+        </View>
+
+        <PrimaryButton
+          label="Add Target"
+          onPress={() =>
+            router.push({
+              pathname: '/trip/[id]/target/add',
+              params: { id: String(trip.id) },
+            })
+          }
+        />
+
+        <View style={styles.sectionSpacer} />
+
+        {progressItems.length === 0 ? (
+          <View style={styles.emptyBox}>
+            <Text style={styles.emptyTitle}>No targets yet</Text>
+            <Text style={styles.emptyText}>
+              Add a weekly or monthly target for this trip or for a specific activity category.
+            </Text>
+          </View>
+        ) : (
+          progressItems.map((item) => (
+            <TargetProgressCard
+              key={item.target.id}
+              item={item}
+              onEdit={() =>
+                router.push({
+                  pathname: '/trip/[id]/target/[targetId]/edit',
+                  params: {
+                    id: String(trip.id),
+                    targetId: String(item.target.id),
+                  },
+                })
+              }
+              onDelete={() => deleteTarget(item.target)}
+            />
+          ))
+        )}
+
+        <View style={styles.sectionSpacer} />
 
         <PrimaryButton
           label="Edit Trip"
@@ -241,6 +357,9 @@ const styles = StyleSheet.create({
   spacer: {
     height: 10,
   },
+  sectionSpacer: {
+    height: 12,
+  },
   message: {
     color: '#475569',
     fontSize: 16,
@@ -255,5 +374,37 @@ const styles = StyleSheet.create({
     height: 12,
     borderRadius: 999,
     marginRight: 8,
+  },
+  sectionHeader: {
+    marginTop: 8,
+    marginBottom: 10,
+  },
+  sectionTitle: {
+    color: '#0F172A',
+    fontSize: 22,
+    fontWeight: '700',
+  },
+  sectionSubtitle: {
+    color: '#64748B',
+    fontSize: 14,
+    marginTop: 4,
+  },
+  emptyBox: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#CBD5E1',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 16,
+  },
+  emptyTitle: {
+    color: '#0F172A',
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  emptyText: {
+    color: '#475569',
+    fontSize: 14,
+    lineHeight: 20,
   },
 });
