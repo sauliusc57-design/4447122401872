@@ -1,4 +1,3 @@
-// app/trip/[id].tsx
 import TargetProgressCard from '@/components/TargetProgressCard';
 import PrimaryButton from '@/components/ui/primary-button';
 import { db } from '@/db/client';
@@ -8,7 +7,15 @@ import { useFocusEffect } from '@react-navigation/native';
 import { eq } from 'drizzle-orm';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Alert,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type Trip = typeof trips.$inferSelect;
@@ -79,45 +86,37 @@ export default function TripDetailScreen() {
   const deleteTrip = () => {
     if (!trip) return;
 
-    Alert.alert(
-      'Delete Trip',
-      `Are you sure you want to delete "${trip.title}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            await db.delete(trips).where(eq(trips.id, trip.id));
-            router.back();
-          },
+    Alert.alert('Delete Trip', `Are you sure you want to delete "${trip.title}"?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          await db.delete(trips).where(eq(trips.id, trip.id));
+          router.back();
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const deleteTarget = (target: Target) => {
-    Alert.alert(
-      'Delete Target',
-      'Are you sure you want to delete this target?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            await db.delete(targets).where(eq(targets.id, target.id));
+    Alert.alert('Delete Target', 'Are you sure you want to delete this target?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          await db.delete(targets).where(eq(targets.id, target.id));
 
-            const refreshedTargets = await db
-              .select()
-              .from(targets)
-              .where(eq(targets.tripId, Number(id)));
+          const refreshedTargets = await db
+            .select()
+            .from(targets)
+            .where(eq(targets.tripId, Number(id)));
 
-            setTargetRows(refreshedTargets);
-          },
+          setTargetRows(refreshedTargets);
         },
-      ]
-    );
+      },
+    ]);
   };
 
   if (loading) {
@@ -141,8 +140,7 @@ export default function TripDetailScreen() {
   }
 
   const fallbackImage = seededImages[trip.title];
-  const hasImage =
-    typeof trip.imageUri === 'string' && trip.imageUri.trim().length > 0;
+  const hasImage = typeof trip.imageUri === 'string' && trip.imageUri.trim().length > 0;
 
   const tripActivities = activityRows.filter((activity) => activity.tripId === trip.id);
 
@@ -163,11 +161,7 @@ export default function TripDetailScreen() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content}>
         {hasImage ? (
-          <Image
-            source={{ uri: trip.imageUri! }}
-            style={styles.image}
-            resizeMode="cover"
-          />
+          <Image source={{ uri: trip.imageUri! }} style={styles.image} resizeMode="cover" />
         ) : fallbackImage ? (
           <Image source={fallbackImage} style={styles.image} resizeMode="cover" />
         ) : (
@@ -183,10 +177,7 @@ export default function TripDetailScreen() {
           <Text style={styles.infoLabel}>Category</Text>
           <View style={styles.categoryRow}>
             <View
-              style={[
-                styles.categoryDot,
-                { backgroundColor: category?.color ?? '#CBD5E1' },
-              ]}
+              style={[styles.categoryDot, { backgroundColor: category?.color ?? '#CBD5E1' }]}
             />
             <Text style={styles.infoValue}>
               {category ? category.name : 'No category assigned'}
@@ -207,9 +198,7 @@ export default function TripDetailScreen() {
         <View style={styles.infoBox}>
           <Text style={styles.infoLabel}>Notes</Text>
           <Text style={styles.infoValue}>
-            {trip.notes && trip.notes.trim().length > 0
-              ? trip.notes
-              : 'No notes added.'}
+            {trip.notes && trip.notes.trim().length > 0 ? trip.notes : 'No notes added.'}
           </Text>
         </View>
 
@@ -219,6 +208,84 @@ export default function TripDetailScreen() {
             {tripActivities.length} activities · {completedActivities.length} completed
           </Text>
         </View>
+
+        <View style={styles.sectionHeader}>
+          <View>
+            <Text style={styles.sectionTitle}>Activities</Text>
+            <Text style={styles.sectionSubtitle}>
+              Add, open and manage activities for this trip.
+            </Text>
+          </View>
+        </View>
+
+        <PrimaryButton
+          label="Add Activity"
+          onPress={() =>
+            router.push({
+              pathname: '/trip/[id]/activity/add',
+              params: { id: String(trip.id) },
+            })
+          }
+        />
+
+        <View style={styles.sectionSpacer} />
+
+        {tripActivities.length === 0 ? (
+          <View style={styles.emptyBox}>
+            <Text style={styles.emptyTitle}>No activities yet</Text>
+            <Text style={styles.emptyText}>
+              Add your first activity for this trip to start tracking records.
+            </Text>
+          </View>
+        ) : (
+          tripActivities.map((activity) => {
+            const activityCategory =
+              categoryRows.find((item) => item.id === activity.categoryId) ?? null;
+
+            return (
+              <Pressable
+                key={activity.id}
+                accessibilityRole="button"
+                accessibilityLabel={`${activity.title}, open activity details`}
+                onPress={() =>
+                  router.push({
+                    pathname: '/trip/[id]/activity/[activityId]',
+                    params: { id: String(trip.id), activityId: String(activity.id) },
+                  })
+                }
+                style={({ pressed }) => [styles.activityCard, pressed && styles.activityCardPressed]}>
+                <View style={styles.activityTopRow}>
+                  <Text style={styles.activityTitle}>{activity.title}</Text>
+                  <Text style={styles.activityDate}>{activity.activityDate}</Text>
+                </View>
+
+                <View style={styles.activityMetaRow}>
+                  <View style={styles.activityMetaPill}>
+                    <Text style={styles.activityMetaText}>
+                      {activityCategory ? activityCategory.name : 'Unknown category'}
+                    </Text>
+                  </View>
+
+                  <View style={styles.activityMetaPill}>
+                    <Text style={styles.activityMetaText}>
+                      {activity.metricValue} minutes
+                    </Text>
+                  </View>
+
+                  <View style={styles.activityMetaPill}>
+                    <Text style={styles.activityMetaText}>{activity.status}</Text>
+                  </View>
+                </View>
+
+                <Text style={styles.activityNotes}>
+                  {activity.notes && activity.notes.trim().length > 0
+                    ? activity.notes
+                    : 'No notes added.'}
+                </Text>
+              </Pressable>
+            );
+          })
+        )}
 
         <View style={styles.sectionHeader}>
           <View>
@@ -281,11 +348,7 @@ export default function TripDetailScreen() {
 
         <View style={styles.spacer} />
 
-        <PrimaryButton
-          label="Delete Trip"
-          variant="danger"
-          onPress={deleteTrip}
-        />
+        <PrimaryButton label="Delete Trip" variant="danger" onPress={deleteTrip} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -354,17 +417,6 @@ const styles = StyleSheet.create({
     color: '#0F172A',
     fontSize: 15,
   },
-  spacer: {
-    height: 10,
-  },
-  sectionSpacer: {
-    height: 12,
-  },
-  message: {
-    color: '#475569',
-    fontSize: 16,
-    textAlign: 'center',
-  },
   categoryRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -389,6 +441,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 4,
   },
+  sectionSpacer: {
+    height: 12,
+  },
+  spacer: {
+    height: 10,
+  },
+  message: {
+    color: '#475569',
+    fontSize: 16,
+    textAlign: 'center',
+  },
   emptyBox: {
     backgroundColor: '#FFFFFF',
     borderColor: '#CBD5E1',
@@ -403,6 +466,54 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   emptyText: {
+    color: '#475569',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  activityCard: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#CBD5E1',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+  },
+  activityCardPressed: {
+    opacity: 0.9,
+  },
+  activityTopRow: {
+    marginBottom: 10,
+  },
+  activityTitle: {
+    color: '#0F172A',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  activityDate: {
+    color: '#64748B',
+    fontSize: 13,
+    marginTop: 4,
+  },
+  activityMetaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 10,
+  },
+  activityMetaPill: {
+    backgroundColor: '#F8FAFC',
+    borderColor: '#CBD5E1',
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  activityMetaText: {
+    color: '#334155',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  activityNotes: {
     color: '#475569',
     fontSize: 14,
     lineHeight: 20,

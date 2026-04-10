@@ -28,7 +28,7 @@ export default function EditTargetScreen() {
   const [categoryRows, setCategoryRows] = useState<Category[]>([]);
   const [scope, setScope] = useState<'trip' | 'category'>('trip');
   const [period, setPeriod] = useState<'weekly' | 'monthly'>('weekly');
-  const [metricType, setMetricType] = useState<'minutes' | 'count'>('minutes');
+  const [metricType, setMetricType] = useState<'minutes' | 'count'>('count');
   const [targetValue, setTargetValue] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
 
@@ -157,26 +157,26 @@ export default function EditTargetScreen() {
           />
         </View>
 
-        <Text style={styles.groupLabel}>Metric</Text>
-        <View style={styles.chipRow}>
-          <Chip
-            label="Minutes"
-            selected={metricType === 'minutes'}
-            onPress={() => setMetricType('minutes')}
-          />
-          <Chip
-            label="Count"
-            selected={metricType === 'count'}
-            onPress={() => setMetricType('count')}
-          />
-        </View>
+        <Text style={styles.groupLabel}>Goal Type</Text>
+          <View style={styles.chipRow}>
+            <Chip
+              label="Activities"
+              selected={metricType === 'count'}
+              onPress={() => setMetricType('count')}
+            />
+            <Chip
+              label="Minutes"
+              selected={metricType === 'minutes'}
+              onPress={() => setMetricType('minutes')}
+            />
+          </View>
 
-        <FormField
-          label={`Target Value (${metricType === 'minutes' ? 'minutes' : 'count'})`}
-          value={targetValue}
-          onChangeText={setTargetValue}
-          placeholder={metricType === 'minutes' ? '240' : '5'}
-        />
+          <FormField
+            label={`Target Value (${metricType === 'minutes' ? 'minutes' : 'activities'})`}
+            value={targetValue}
+            onChangeText={setTargetValue}
+            placeholder={metricType === 'minutes' ? '240' : '3'}
+          />
 
         <View style={styles.buttonGroup}>
           <PrimaryButton label="Save Changes" onPress={saveChanges} />

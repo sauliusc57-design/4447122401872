@@ -1,4 +1,3 @@
-// lib/target-progress.ts
 import { activities, categories, targets, trips } from '@/db/schema';
 
 export type ActivityRow = typeof activities.$inferSelect;
@@ -36,21 +35,17 @@ function formatDateKey(date: Date) {
 
 function getWeekStartKey(dateString: string) {
   const date = startOfDay(dateString);
-  const day = date.getDay(); // 0 = Sun, 1 = Mon
+  const day = date.getDay();
   const diffToMonday = day === 0 ? -6 : 1 - day;
   const monday = addDays(date, diffToMonday);
   return formatDateKey(monday);
 }
 
 function getMonthKey(dateString: string) {
-  return dateString.slice(0, 7); // YYYY-MM
+  return dateString.slice(0, 7);
 }
 
-function getCoveredPeriodCount(
-  startDate: string,
-  endDate: string,
-  period: string
-) {
+function getCoveredPeriodCount(startDate: string, endDate: string, period: string) {
   const keys = new Set<string>();
   let cursor = startOfDay(startDate);
   const end = startOfDay(endDate);
@@ -90,25 +85,23 @@ export function calculateTargetProgress(params: {
 
   const matchingActivities = activities.filter((activity) => {
     const sameTrip = activity.tripId === trip.id;
-    const sameMetric = activity.metricType === target.metricType;
     const completedOnly = activity.status === 'completed';
     const sameCategory =
       target.categoryId == null || activity.categoryId === target.categoryId;
 
-    return sameTrip && sameMetric && completedOnly && sameCategory;
+    if (target.metricType === 'minutes') {
+      return sameTrip && completedOnly && sameCategory && activity.metricType === 'minutes';
+    }
+
+    return sameTrip && completedOnly && sameCategory;
   });
 
-  const progressValue = matchingActivities.reduce(
-    (sum, activity) => sum + activity.metricValue,
-    0
-  );
+  const progressValue =
+    target.metricType === 'minutes'
+      ? matchingActivities.reduce((sum, activity) => sum + activity.metricValue, 0)
+      : matchingActivities.length;
 
-  const periodCount = getCoveredPeriodCount(
-    trip.startDate,
-    trip.endDate,
-    target.period
-  );
-
+  const periodCount = getCoveredPeriodCount(trip.startDate, trip.endDate, target.period);
   const expectedTotal = target.targetValue * periodCount;
   const remaining = Math.max(expectedTotal - progressValue, 0);
   const exceededBy = Math.max(progressValue - expectedTotal, 0);
@@ -117,13 +110,11 @@ export function calculateTargetProgress(params: {
     progressValue > expectedTotal
       ? 'exceeded'
       : progressValue === expectedTotal
-      ? 'met'
-      : 'unmet';
+        ? 'met'
+        : 'unmet';
 
   const percentage =
-    expectedTotal === 0
-      ? 0
-      : Math.min((progressValue / expectedTotal) * 100, 100);
+    expectedTotal === 0 ? 0 : Math.min((progressValue / expectedTotal) * 100, 100);
 
   const categoryName =
     target.categoryId == null
@@ -131,10 +122,12 @@ export function calculateTargetProgress(params: {
       : categories.find((category) => category.id === target.categoryId)?.name ??
         'Unknown category';
 
+  const metricLabel = target.metricType === 'minutes' ? 'minutes' : 'activities';
+
   const title =
     target.categoryId == null
-      ? `${target.period === 'weekly' ? 'Weekly' : 'Monthly'} trip target`
-      : `${categoryName} ${target.period === 'weekly' ? 'weekly' : 'monthly'} target`;
+      ? `Complete ${target.targetValue} ${metricLabel} per ${target.period === 'weekly' ? 'week' : 'month'}`
+      : `Complete ${target.targetValue} ${categoryName.toLowerCase()} ${metricLabel} per ${target.period === 'weekly' ? 'week' : 'month'}`;
 
   return {
     target,

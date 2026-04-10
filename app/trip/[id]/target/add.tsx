@@ -1,4 +1,3 @@
-// app/trip/[id]/target/add.tsx
 import FormField from '@/components/ui/form-field';
 import PrimaryButton from '@/components/ui/primary-button';
 import { db } from '@/db/client';
@@ -6,14 +5,7 @@ import { categories, targets } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import {
-    Alert,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
-} from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type Category = typeof categories.$inferSelect;
@@ -25,7 +17,7 @@ export default function AddTargetScreen() {
   const [categoryRows, setCategoryRows] = useState<Category[]>([]);
   const [scope, setScope] = useState<'trip' | 'category'>('trip');
   const [period, setPeriod] = useState<'weekly' | 'monthly'>('weekly');
-  const [metricType, setMetricType] = useState<'minutes' | 'count'>('minutes');
+  const [metricType, setMetricType] = useState<'minutes' | 'count'>('count');
   const [targetValue, setTargetValue] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
 
@@ -120,25 +112,25 @@ export default function AddTargetScreen() {
           />
         </View>
 
-        <Text style={styles.groupLabel}>Metric</Text>
+        <Text style={styles.groupLabel}>Goal Type</Text>
         <View style={styles.chipRow}>
+          <Chip
+            label="Activities"
+            selected={metricType === 'count'}
+            onPress={() => setMetricType('count')}
+          />
           <Chip
             label="Minutes"
             selected={metricType === 'minutes'}
             onPress={() => setMetricType('minutes')}
           />
-          <Chip
-            label="Count"
-            selected={metricType === 'count'}
-            onPress={() => setMetricType('count')}
-          />
         </View>
 
         <FormField
-          label={`Target Value (${metricType === 'minutes' ? 'minutes' : 'count'})`}
+          label={`Target Value (${metricType === 'minutes' ? 'minutes' : 'activities'})`}
           value={targetValue}
           onChangeText={setTargetValue}
-          placeholder={metricType === 'minutes' ? '240' : '5'}
+          placeholder={metricType === 'minutes' ? '240' : '3'}
         />
 
         <View style={styles.buttonGroup}>
@@ -169,8 +161,7 @@ function Chip({
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
-      style={[styles.chip, selected && styles.chipSelected]}
-    >
+      style={[styles.chip, selected && styles.chipSelected]}>
       <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
         {label}
       </Text>
