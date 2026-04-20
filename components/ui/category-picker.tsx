@@ -1,4 +1,3 @@
-// Horizontal scrollable row of category chips. Highlights the selected category and calls onSelect when tapped.
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 export type CategoryOption = {
@@ -12,6 +11,7 @@ type Props = {
   categories: CategoryOption[];
   selectedCategoryId: number | null;
   onSelect: (categoryId: number) => void;
+  onAdd?: () => void;
   label?: string;
 };
 
@@ -19,6 +19,7 @@ export default function CategoryPicker({
   categories,
   selectedCategoryId,
   onSelect,
+  onAdd,
   label = 'Category',
 }: Props) {
   return (
@@ -62,6 +63,17 @@ export default function CategoryPicker({
             </Pressable>
           );
         })}
+
+        {onAdd && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Add new category"
+            onPress={onAdd}
+            style={styles.addChip}
+          >
+            <Text style={styles.addChipText}>+ New</Text>
+          </Pressable>
+        )}
       </ScrollView>
     </View>
   );
@@ -104,5 +116,22 @@ const styles = StyleSheet.create({
   },
   chipTextSelected: {
     color: '#FFFFFF',
+  },
+  addChip: {
+    alignItems: 'center',
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#94A3B8',
+    borderStyle: 'dashed',
+    flexDirection: 'row',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: '#F8FAFC',
+    marginRight: 8,
+  },
+  addChipText: {
+    color: '#475569',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

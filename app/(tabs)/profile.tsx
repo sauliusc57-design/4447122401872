@@ -1,13 +1,15 @@
 // Profile screen. Shows the logged-in user's email with options to log out or permanently delete their account and all associated data.
 import PrimaryButton from '@/components/ui/primary-button';
 import { deleteUserProfile } from '@/db/auth';
+import { useRouter } from 'expo-router';
 import { useContext } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../_layout';
 
 export default function ProfileScreen() {
   const auth = useContext(AuthContext);
+  const router = useRouter();
 
   if (!auth) return null;
 
@@ -47,6 +49,18 @@ export default function ProfileScreen() {
           <Text style={styles.label}>Logged in as</Text>
           <Text style={styles.value}>{currentUser.email}</Text>
         </View>
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Manage categories"
+          onPress={() => router.push('/categories' as any)}
+          style={styles.menuRow}
+        >
+          <Text style={styles.menuRowText}>Manage Categories</Text>
+          <Text style={styles.menuRowChevron}>›</Text>
+        </Pressable>
+
+        <View style={styles.spacer} />
 
         <PrimaryButton label="Log Out" onPress={handleLogout} />
 
@@ -102,5 +116,26 @@ const styles = StyleSheet.create({
   },
   spacer: {
     height: 10,
+  },
+  menuRow: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#CBD5E1',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  menuRowText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#0F172A',
+  },
+  menuRowChevron: {
+    fontSize: 20,
+    color: '#94A3B8',
   },
 });

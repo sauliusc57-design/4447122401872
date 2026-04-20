@@ -1,5 +1,6 @@
 // Screen for creating a new trip. Lets the user pick an image from their library,
 // select a category, and fill in trip details before saving to SQLite.
+import CategoryFormModal from '@/components/ui/category-form-modal';
 import CategoryPicker from '@/components/ui/category-picker';
 import FormField from '@/components/ui/form-field';
 import PrimaryButton from '@/components/ui/primary-button';
@@ -35,20 +36,29 @@ export default function AddTripScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [categoryRows, setCategoryRows] = useState<Category[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [categoryModalVisible, setCategoryModalVisible] = useState(false);
+
+  const loadCategories = async () => {
+    if (!currentUser) return;
+    const rows = await db.select().from(categories).where(eq(categories.userId, currentUser.id));
+    setCategoryRows(rows);
+    return rows;
+  };
 
   useEffect(() => {
-    if (!currentUser) return;
-    const loadCategories = async () => {
-      const rows = await db.select().from(categories).where(eq(categories.userId, currentUser.id));
-      setCategoryRows(rows);
-
-      if (rows.length > 0) {
-        setSelectedCategoryId(rows[0].id);
-      }
-    };
-
-    loadCategories();
+    loadCategories().then((rows) => {
+      if (rows && rows.length > 0) setSelectedCategoryId(rows[0].id);
+    });
   }, []);
+
+  const handleAddCategory = async (name: string, color: string, icon: string) => {
+    if (!currentUser) return;
+    await db.insert(categories).values({ userId: currentUser.id, name, color, icon });
+    const rows = await loadCategories();
+    const created = rows?.find((r) => r.name === name && r.color === color);
+    if (created) setSelectedCategoryId(created.id);
+    setCategoryModalVisible(false);
+  };
 
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -128,6 +138,7 @@ export default function AddTripScreen() {
           categories={categoryRows}
           selectedCategoryId={selectedCategoryId}
           onSelect={setSelectedCategoryId}
+          onAdd={() => setCategoryModalVisible(true)}
           label="Trip Category"
         />
 
@@ -177,6 +188,12 @@ export default function AddTripScreen() {
           />
         </View>
       </ScrollView>
+
+      <CategoryFormModal
+        visible={categoryModalVisible}
+        onSave={handleAddCategory}
+        onCancel={() => setCategoryModalVisible(false)}
+      />
     </SafeAreaView>
   );
 }

@@ -1,3 +1,4 @@
+import CategoryFormModal from '@/components/ui/category-form-modal';
 import CategoryPicker from '@/components/ui/category-picker';
 import FormField from '@/components/ui/form-field';
 import PrimaryButton from '@/components/ui/primary-button';
@@ -28,6 +29,7 @@ export default function AddActivityScreen() {
   const [status, setStatus] = useState<'planned' | 'completed'>('planned');
   const [notes, setNotes] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [categoryModalVisible, setCategoryModalVisible] = useState(false);
 
   if (!auth?.currentUser) return null;
 
@@ -66,6 +68,15 @@ export default function AddActivityScreen() {
 
     loadData();
   }, [id, currentUser.id]);
+
+  const handleAddCategory = async (name: string, color: string, icon: string) => {
+    await db.insert(categories).values({ userId: currentUser.id, name, color, icon });
+    const rows = await db.select().from(categories).where(eq(categories.userId, currentUser.id));
+    setCategoryRows(rows);
+    const created = rows.find((r) => r.name === name && r.color === color);
+    if (created) setSelectedCategoryId(created.id);
+    setCategoryModalVisible(false);
+  };
 
   const saveActivity = async () => {
     if (!trip) return;
@@ -128,6 +139,7 @@ export default function AddActivityScreen() {
           categories={categoryRows}
           selectedCategoryId={selectedCategoryId}
           onSelect={setSelectedCategoryId}
+          onAdd={() => setCategoryModalVisible(true)}
           label="Activity Category"
         />
 
@@ -174,6 +186,12 @@ export default function AddActivityScreen() {
           <PrimaryButton label="Cancel" variant="secondary" onPress={() => router.back()} />
         </View>
       </ScrollView>
+
+      <CategoryFormModal
+        visible={categoryModalVisible}
+        onSave={handleAddCategory}
+        onCancel={() => setCategoryModalVisible(false)}
+      />
     </SafeAreaView>
   );
 }

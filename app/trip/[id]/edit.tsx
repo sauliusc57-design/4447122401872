@@ -1,3 +1,4 @@
+import CategoryFormModal from '@/components/ui/category-form-modal';
 import CategoryPicker from '@/components/ui/category-picker';
 import FormField from '@/components/ui/form-field';
 import PrimaryButton from '@/components/ui/primary-button';
@@ -28,6 +29,7 @@ export default function EditTripScreen() {
   const [loading, setLoading] = useState(true);
   const [existingTrip, setExistingTrip] = useState<Trip | null>(null);
   const [categoryRows, setCategoryRows] = useState<Category[]>([]);
+  const [categoryModalVisible, setCategoryModalVisible] = useState(false);
 
   const [title, setTitle] = useState('');
   const [destination, setDestination] = useState('');
@@ -76,6 +78,20 @@ export default function EditTripScreen() {
 
     loadTrip();
   }, [id, currentUser.id]);
+
+  const reloadCategories = async () => {
+    const rows = await db.select().from(categories).where(eq(categories.userId, currentUser.id));
+    setCategoryRows(rows);
+    return rows;
+  };
+
+  const handleAddCategory = async (name: string, color: string, icon: string) => {
+    await db.insert(categories).values({ userId: currentUser.id, name, color, icon });
+    const rows = await reloadCategories();
+    const created = rows.find((r) => r.name === name && r.color === color);
+    if (created) setSelectedCategoryId(created.id);
+    setCategoryModalVisible(false);
+  };
 
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -166,6 +182,7 @@ export default function EditTripScreen() {
           categories={categoryRows}
           selectedCategoryId={selectedCategoryId}
           onSelect={setSelectedCategoryId}
+          onAdd={() => setCategoryModalVisible(true)}
           label="Trip Category"
         />
 
@@ -187,6 +204,12 @@ export default function EditTripScreen() {
           <PrimaryButton label="Cancel" variant="secondary" onPress={() => router.back()} />
         </View>
       </ScrollView>
+
+      <CategoryFormModal
+        visible={categoryModalVisible}
+        onSave={handleAddCategory}
+        onCancel={() => setCategoryModalVisible(false)}
+      />
     </SafeAreaView>
   );
 }
