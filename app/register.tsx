@@ -66,6 +66,7 @@ export default function RegisterScreen() {
           value={password}
           onChangeText={setPassword}
           placeholder="Create a password"
+          secureTextEntry
         />
 
         <FormField
@@ -73,6 +74,7 @@ export default function RegisterScreen() {
           value={confirmPassword}
           onChangeText={setConfirmPassword}
           placeholder="Re-enter your password"
+          secureTextEntry
         />
 
         <PrimaryButton label="Register" onPress={handleRegister} />

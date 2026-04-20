@@ -1,5 +1,7 @@
-// Reusable labelled text input. Supports single-line and multiline (tall) modes.
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+// Reusable labelled text input. Supports single-line, multiline, and secure (password) modes.
+import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 type Props = {
   label: string;
@@ -7,6 +9,7 @@ type Props = {
   onChangeText: (text: string) => void;
   placeholder?: string;
   multiline?: boolean;
+  secureTextEntry?: boolean;
 };
 
 export default function FormField({
@@ -15,19 +18,34 @@ export default function FormField({
   onChangeText,
   placeholder,
   multiline = false,
+  secureTextEntry = false,
 }: Props) {
+  const [hidden, setHidden] = useState(secureTextEntry);
+
   return (
     <View style={styles.wrapper}>
       <Text style={styles.label}>{label}</Text>
-      <TextInput
-        accessibilityLabel={label}
-        placeholder={placeholder ?? label}
-        value={value}
-        onChangeText={onChangeText}
-        multiline={multiline}
-        textAlignVertical={multiline ? 'top' : 'auto'}
-        style={[styles.input, multiline && styles.multilineInput]}
-      />
+      <View style={[styles.inputRow, multiline && styles.multilineRow]}>
+        <TextInput
+          accessibilityLabel={label}
+          placeholder={placeholder ?? label}
+          value={value}
+          onChangeText={onChangeText}
+          multiline={multiline}
+          textAlignVertical={multiline ? 'top' : 'auto'}
+          secureTextEntry={hidden}
+          style={[styles.input, multiline && styles.multilineInput, secureTextEntry && styles.inputFlex]}
+        />
+        {secureTextEntry && (
+          <Pressable
+            onPress={() => setHidden((h) => !h)}
+            style={styles.eyeButton}
+            accessibilityLabel={hidden ? 'Show password' : 'Hide password'}
+          >
+            <Ionicons name={hidden ? 'eye-off' : 'eye'} size={18} color="#64748B" />
+          </Pressable>
+        )}
+      </View>
     </View>
   );
 }
@@ -42,16 +60,31 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 6,
   },
-  input: {
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderColor: '#CBD5E1',
     borderRadius: 10,
     borderWidth: 1,
+  },
+  multilineRow: {
+    alignItems: 'flex-start',
+  },
+  input: {
+    flex: 1,
     fontSize: 15,
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
+  inputFlex: {
+    flex: 1,
+  },
   multilineInput: {
     minHeight: 100,
+  },
+  eyeButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
 });

@@ -51,14 +51,15 @@ export default function LoginScreen() {
           label="Email"
           value={email}
           onChangeText={setEmail}
-          placeholder="demo@planner.com"
+          placeholder="example@email.com"
         />
 
         <FormField
           label="Password"
           value={password}
           onChangeText={setPassword}
-          placeholder="demo123"
+          placeholder="Your password"
+          secureTextEntry
         />
 
         <PrimaryButton label="Log In" onPress={handleLogin} />

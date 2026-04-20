@@ -5,9 +5,10 @@ import FormField from '@/components/ui/form-field';
 import PrimaryButton from '@/components/ui/primary-button';
 import { db } from '@/db/client';
 import { categories, trips } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import {
   Alert,
   Image,
@@ -17,11 +18,14 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AuthContext } from '../_layout';
 
 type Category = typeof categories.$inferSelect;
 
 export default function AddTripScreen() {
   const router = useRouter();
+  const auth = useContext(AuthContext);
+  const currentUser = auth?.currentUser ?? null;
 
   const [title, setTitle] = useState('');
   const [destination, setDestination] = useState('');
@@ -33,8 +37,9 @@ export default function AddTripScreen() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
 
   useEffect(() => {
+    if (!currentUser) return;
     const loadCategories = async () => {
-      const rows = await db.select().from(categories);
+      const rows = await db.select().from(categories).where(eq(categories.userId, currentUser.id));
       setCategoryRows(rows);
 
       if (rows.length > 0) {
@@ -87,7 +92,7 @@ export default function AddTripScreen() {
     const now = new Date().toISOString();
 
     await db.insert(trips).values({
-      userId: 1,
+      userId: currentUser!.id,
       categoryId: selectedCategoryId,
       title: title.trim(),
       destination: destination.trim(),
