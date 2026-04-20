@@ -6,16 +6,11 @@ import { db } from './client';
 import { activities, categories, targets, trips, users } from './schema';
 
 export async function seedHolidayPlannerIfEmpty() {
-  const existingTrips = await db.select().from(trips);
-
-  if (existingTrips.length > 0) {
-    return;
-  }
-
   const now = new Date().toISOString();
   const demoEmail = 'demo@planner.com';
   const demoPasswordHash = await hashPassword('demo123');
 
+  // Always ensure the demo user exists, even if seeding was previously skipped.
   let demoUser = (
     await db.select().from(users).where(eq(users.email, demoEmail))
   )[0];
@@ -39,6 +34,12 @@ export async function seedHolidayPlannerIfEmpty() {
     demoUser = (
       await db.select().from(users).where(eq(users.email, demoEmail))
     )[0];
+  }
+
+  const existingTrips = await db.select().from(trips);
+
+  if (existingTrips.length > 0) {
+    return;
   }
 
   const demoUserId = demoUser.id;

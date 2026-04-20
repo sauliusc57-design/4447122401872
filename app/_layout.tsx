@@ -1,7 +1,7 @@
 // Root layout for the app. Sets up the authentication context, theme provider, and database seeding on startup.
 // AuthGate redirects unauthenticated users to /login and logged-in users away from auth screens.
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Redirect, Slot, usePathname } from 'expo-router';
+import { Slot, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { createContext, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
@@ -27,17 +27,18 @@ function AuthGate({
   currentUser: User | null;
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
+  const segments = useSegments();
+  const router = useRouter();
 
-  const isAuthScreen = pathname === '/login' || pathname === '/register';
+  const isAuthScreen = segments[0] === 'login' || segments[0] === 'register';
 
-  if (!currentUser && !isAuthScreen) {
-    return <Redirect href="/login" />;
-  }
-
-  if (currentUser && isAuthScreen) {
-    return <Redirect href="/" />;
-  }
+  useEffect(() => {
+    if (!currentUser && !isAuthScreen) {
+      router.replace('/login');
+    } else if (currentUser && isAuthScreen) {
+      router.replace('/');
+    }
+  }, [currentUser, isAuthScreen]);
 
   return <>{children}</>;
 }

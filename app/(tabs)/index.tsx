@@ -30,6 +30,8 @@ function isFullIsoDate(value: string) {
 
 export default function IndexScreen() {
   const router = useRouter();
+  const auth = useContext(AuthContext);
+  const currentUser = auth?.currentUser ?? null;
 
   const [tripRows, setTripRows] = useState<Trip[]>([]);
   const [categoryRows, setCategoryRows] = useState<Category[]>([]);
@@ -39,15 +41,12 @@ export default function IndexScreen() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>(ALL_CATEGORIES);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
-  const auth = useContext(AuthContext);
-
-  if (!auth?.currentUser) return null;
-
-  const { currentUser } = auth;
 
   // Reloads trips and categories each time the screen comes into focus (e.g. after adding or editing a trip).
   useFocusEffect(
     useCallback(() => {
+      if (!currentUser) return;
+
       let active = true;
 
       const loadTrips = async () => {
@@ -70,7 +69,7 @@ export default function IndexScreen() {
       return () => {
         active = false;
       };
-    }, [])
+    }, [currentUser])
   );
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -99,6 +98,8 @@ export default function IndexScreen() {
       return matchesSearch && matchesCategory && overlapsFromDate && overlapsToDate;
     });
   }, [tripRows, normalizedQuery, selectedCategoryId, validFromDate, validToDate]);
+
+  if (!currentUser) return null;
 
   const clearFilters = () => {
     setSearchQuery('');
