@@ -34,16 +34,14 @@ export default function TripDetailScreen() {
   const [targetRows, setTargetRows] = useState<Target[]>([]);
   const [loading, setLoading] = useState(true);
 
-  if (!auth?.currentUser) return null;
-
-  const { currentUser } = auth;
+  const currentUser = auth?.currentUser ?? null;
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
 
       const loadTrip = async () => {
-        if (!id) {
+        if (!id || !currentUser) {
           if (active) setLoading(false);
           return;
         }
@@ -89,7 +87,7 @@ export default function TripDetailScreen() {
       return () => {
         active = false;
       };
-    }, [id, currentUser.id])
+    }, [id, currentUser])
   );
 
   const deleteTrip = () => {
@@ -122,13 +120,15 @@ export default function TripDetailScreen() {
           const refreshedTargets = await db
             .select()
             .from(targets)
-            .where(and(eq(targets.tripId, Number(id)), eq(targets.userId, currentUser.id)));
+            .where(and(eq(targets.tripId, Number(id)), eq(targets.userId, currentUser!.id)));
 
           setTargetRows(refreshedTargets);
         },
       },
     ]);
   };
+
+  if (!currentUser) return null;
 
   if (loading) {
     return (
@@ -314,27 +314,17 @@ export default function TripDetailScreen() {
             </View>
           ) : (
             progressItems.map((item) => (
-              <View key={item.target.id} style={styles.targetWrap}>
-                <TargetProgressCard progress={item} />
-                <View style={styles.targetButtons}>
-                  <PrimaryButton
-                    label="Edit"
-                    variant="secondary"
-                    onPress={() =>
-                      router.push({
-                        pathname: '/trip/[id]/target/[targetId]/edit',
-                        params: { id: String(trip.id), targetId: String(item.target.id) },
-                      })
-                    }
-                  />
-                  <View style={styles.smallSpacer} />
-                  <PrimaryButton
-                    label="Delete"
-                    variant="danger"
-                    onPress={() => deleteTarget(item.target)}
-                  />
-                </View>
-              </View>
+              <TargetProgressCard
+                key={item.target.id}
+                item={item}
+                onEdit={() =>
+                  router.push({
+                    pathname: '/trip/[id]/target/[targetId]/edit',
+                    params: { id: String(trip.id), targetId: String(item.target.id) },
+                  })
+                }
+                onDelete={() => deleteTarget(item.target)}
+              />
             ))
           )}
         </View>
