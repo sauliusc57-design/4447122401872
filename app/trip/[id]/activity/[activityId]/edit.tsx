@@ -1,4 +1,5 @@
 import CategoryPicker from '@/components/ui/category-picker';
+import DatePickerField from '@/components/ui/date-picker-field';
 import FormField from '@/components/ui/form-field';
 import PrimaryButton from '@/components/ui/primary-button';
 import { db } from '@/db/client';
@@ -14,6 +15,18 @@ type Activity = typeof activities.$inferSelect;
 type Category = typeof categories.$inferSelect;
 type Trip = typeof trips.$inferSelect;
 
+function parseDateString(s: string): Date {
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function toDateString(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 export default function EditActivityScreen() {
   const { activityId } = useLocalSearchParams<{ activityId: string }>();
   const router = useRouter();
@@ -24,7 +37,7 @@ export default function EditActivityScreen() {
   const [categoryRows, setCategoryRows] = useState<Category[]>([]);
 
   const [title, setTitle] = useState('');
-  const [activityDate, setActivityDate] = useState('');
+  const [activityDate, setActivityDate] = useState<Date>(new Date());
   const [durationMinutes, setDurationMinutes] = useState('');
   const [status, setStatus] = useState<'planned' | 'completed'>('planned');
   const [notes, setNotes] = useState('');
@@ -60,7 +73,7 @@ export default function EditActivityScreen() {
       setExistingActivity(foundActivity);
       setCategoryRows(categoryList);
       setTitle(foundActivity.title);
-      setActivityDate(foundActivity.activityDate);
+      setActivityDate(parseDateString(foundActivity.activityDate));
       setDurationMinutes(String(foundActivity.metricValue));
       setStatus(foundActivity.status === 'completed' ? 'completed' : 'planned');
       setNotes(foundActivity.notes ?? '');
@@ -75,8 +88,8 @@ export default function EditActivityScreen() {
   const saveActivity = async () => {
     if (!existingActivity) return;
 
-    if (!title.trim() || !activityDate.trim() || !durationMinutes.trim()) {
-      Alert.alert('Missing details', 'Please complete the title, date, and duration.');
+    if (!title.trim() || !durationMinutes.trim()) {
+      Alert.alert('Missing details', 'Please complete the title and duration.');
       return;
     }
 
@@ -97,7 +110,7 @@ export default function EditActivityScreen() {
       .set({
         categoryId: selectedCategoryId,
         title: title.trim(),
-        activityDate: activityDate.trim(),
+        activityDate: toDateString(activityDate),
         metricValue: parsedMinutes,
         metricType: 'minutes',
         status,
@@ -138,8 +151,10 @@ export default function EditActivityScreen() {
         />
 
         <FormField label="Activity Title" value={title} onChangeText={setTitle} placeholder="Visit Eiffel Tower" />
-        <FormField label="Activity Date" value={activityDate} onChangeText={setActivityDate} placeholder="2026-06-13" />
-        <FormField label="Duration (minutes)" value={durationMinutes} onChangeText={setDurationMinutes} placeholder="120" />
+
+        <DatePickerField label="Activity Date" value={activityDate} onChange={setActivityDate} />
+
+        <FormField label="Duration (minutes)" value={durationMinutes} onChangeText={setDurationMinutes} placeholder="120" keyboardType="numeric" />
 
         <Text style={styles.label}>Status</Text>
         <View style={styles.chipRow}>

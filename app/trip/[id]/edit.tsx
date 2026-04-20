@@ -1,5 +1,6 @@
 import CategoryFormModal from '@/components/ui/category-form-modal';
 import CategoryPicker from '@/components/ui/category-picker';
+import DatePickerField from '@/components/ui/date-picker-field';
 import FormField from '@/components/ui/form-field';
 import PrimaryButton from '@/components/ui/primary-button';
 import { db } from '@/db/client';
@@ -21,10 +22,24 @@ const seededImages: Record<string, any> = {
   'Week in London': require('../../../assets/images/trips/London.jpg'),
 };
 
+function parseDateString(s: string): Date {
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function toDateString(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 export default function EditTripScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const auth = useContext(AuthContext);
+
+  const today = new Date();
 
   const [loading, setLoading] = useState(true);
   const [existingTrip, setExistingTrip] = useState<Trip | null>(null);
@@ -32,9 +47,10 @@ export default function EditTripScreen() {
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
 
   const [title, setTitle] = useState('');
-  const [destination, setDestination] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [city, setCity] = useState('');
+  const [country, setCountry] = useState('');
+  const [startDate, setStartDate] = useState<Date>(today);
+  const [endDate, setEndDate] = useState<Date>(today);
   const [notes, setNotes] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
@@ -65,9 +81,18 @@ export default function EditTripScreen() {
 
       if (trip) {
         setTitle(trip.title);
-        setDestination(trip.destination);
-        setStartDate(trip.startDate);
-        setEndDate(trip.endDate);
+
+        const commaIdx = trip.destination.indexOf(', ');
+        if (commaIdx >= 0) {
+          setCity(trip.destination.slice(0, commaIdx));
+          setCountry(trip.destination.slice(commaIdx + 2));
+        } else {
+          setCity(trip.destination);
+          setCountry('');
+        }
+
+        setStartDate(parseDateString(trip.startDate));
+        setEndDate(parseDateString(trip.endDate));
         setNotes(trip.notes ?? '');
         setImageUri(trip.imageUri ?? null);
         setSelectedCategoryId(trip.categoryId ?? null);
@@ -114,11 +139,8 @@ export default function EditTripScreen() {
   };
 
   const saveTrip = async () => {
-    if (!title.trim() || !destination.trim() || !startDate.trim() || !endDate.trim()) {
-      Alert.alert(
-        'Missing details',
-        'Please complete title, destination, start date, and end date.'
-      );
+    if (!title.trim() || !city.trim()) {
+      Alert.alert('Missing details', 'Please complete the title and city.');
       return;
     }
 
@@ -127,14 +149,18 @@ export default function EditTripScreen() {
       return;
     }
 
+    const destination = country.trim()
+      ? `${city.trim()}, ${country.trim()}`
+      : city.trim();
+
     await db
       .update(trips)
       .set({
         categoryId: selectedCategoryId,
         title: title.trim(),
-        destination: destination.trim(),
-        startDate: startDate.trim(),
-        endDate: endDate.trim(),
+        destination,
+        startDate: toDateString(startDate),
+        endDate: toDateString(endDate),
         notes: notes.trim() ? notes.trim() : null,
         imageUri,
       })
@@ -187,9 +213,15 @@ export default function EditTripScreen() {
         />
 
         <FormField label="Trip Title" value={title} onChangeText={setTitle} placeholder="Weekend in Paris" />
-        <FormField label="Destination" value={destination} onChangeText={setDestination} placeholder="Paris, France" />
-        <FormField label="Start Date" value={startDate} onChangeText={setStartDate} placeholder="2026-06-12" />
-        <FormField label="End Date" value={endDate} onChangeText={setEndDate} placeholder="2026-06-15" />
+
+        <FormField label="City" value={city} onChangeText={setCity} placeholder="Paris" />
+
+        <FormField label="Country (optional)" value={country} onChangeText={setCountry} placeholder="France" />
+
+        <DatePickerField label="Start Date" value={startDate} onChange={setStartDate} />
+
+        <DatePickerField label="End Date" value={endDate} onChange={setEndDate} />
+
         <FormField
           label="Notes"
           value={notes}

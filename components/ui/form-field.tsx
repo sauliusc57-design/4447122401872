@@ -10,6 +10,7 @@ type Props = {
   placeholder?: string;
   multiline?: boolean;
   secureTextEntry?: boolean;
+  keyboardType?: 'default' | 'numeric' | 'email-address' | 'phone-pad';
 };
 
 export default function FormField({
@@ -19,6 +20,7 @@ export default function FormField({
   placeholder,
   multiline = false,
   secureTextEntry = false,
+  keyboardType = 'default',
 }: Props) {
   const [hidden, setHidden] = useState(secureTextEntry);
 
@@ -34,6 +36,7 @@ export default function FormField({
           multiline={multiline}
           textAlignVertical={multiline ? 'top' : 'auto'}
           secureTextEntry={hidden}
+          keyboardType={keyboardType}
           style={[styles.input, multiline && styles.multilineInput, secureTextEntry && styles.inputFlex]}
         />
         {secureTextEntry && (

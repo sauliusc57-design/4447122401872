@@ -1,14 +1,18 @@
 // Main trips list screen. Loads the logged-in user's trips and categories from SQLite,
-// and lets them filter by text search, category, and date range.
+// and lets them filter by text search, category, and a single date.
 import TripCard from '@/components/TripCard';
 import PrimaryButton from '@/components/ui/primary-button';
 import { db } from '@/db/client';
 import { categories, trips } from '@/db/schema';
+import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { useFocusEffect } from '@react-navigation/native';
 import { eq } from 'drizzle-orm';
 import { useRouter } from 'expo-router';
 import { useCallback, useContext, useMemo, useState } from 'react';
 import {
+  Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -24,8 +28,15 @@ type Category = typeof categories.$inferSelect;
 
 const ALL_CATEGORIES = 'all';
 
-function isFullIsoDate(value: string) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value);
+function toDateString(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function formatDisplay(d: Date): string {
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 export default function IndexScreen() {
@@ -39,10 +50,9 @@ export default function IndexScreen() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>(ALL_CATEGORIES);
-  const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState('');
+  const [filterDate, setFilterDate] = useState<Date | null>(null);
+  const [iosPickerVisible, setIosPickerVisible] = useState(false);
 
-  // Reloads trips and categories each time the screen comes into focus (e.g. after adding or editing a trip).
   useFocusEffect(
     useCallback(() => {
       if (!currentUser) return;
@@ -73,10 +83,7 @@ export default function IndexScreen() {
   );
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
-  const validFromDate = isFullIsoDate(fromDate.trim()) ? fromDate.trim() : '';
-  const validToDate = isFullIsoDate(toDate.trim()) ? toDate.trim() : '';
 
-  // Derives the filtered trip list from raw data. Runs only when trips or filter values change.
   const filteredTrips = useMemo(() => {
     return tripRows.filter((trip) => {
       const matchesSearch =
@@ -89,24 +96,41 @@ export default function IndexScreen() {
         selectedCategoryId === ALL_CATEGORIES ||
         String(trip.categoryId) === selectedCategoryId;
 
-      const overlapsFromDate =
-        validFromDate.length === 0 || trip.endDate >= validFromDate;
+      const matchesDate =
+        filterDate === null ||
+        (trip.startDate <= toDateString(filterDate) && trip.endDate >= toDateString(filterDate));
 
-      const overlapsToDate =
-        validToDate.length === 0 || trip.startDate <= validToDate;
-
-      return matchesSearch && matchesCategory && overlapsFromDate && overlapsToDate;
+      return matchesSearch && matchesCategory && matchesDate;
     });
-  }, [tripRows, normalizedQuery, selectedCategoryId, validFromDate, validToDate]);
+  }, [tripRows, normalizedQuery, selectedCategoryId, filterDate]);
 
   if (!currentUser) return null;
+
+  const openDatePicker = () => {
+    const current = filterDate ?? new Date();
+    if (Platform.OS === 'android') {
+      DateTimePickerAndroid.open({
+        value: current,
+        mode: 'date',
+        onChange: (_e, date) => {
+          if (date) setFilterDate(date);
+        },
+      });
+    } else {
+      setIosPickerVisible(true);
+    }
+  };
 
   const clearFilters = () => {
     setSearchQuery('');
     setSelectedCategoryId(ALL_CATEGORIES);
-    setFromDate('');
-    setToDate('');
+    setFilterDate(null);
   };
+
+  const hasActiveFilters =
+    searchQuery.length > 0 ||
+    selectedCategoryId !== ALL_CATEGORIES ||
+    filterDate !== null;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -152,29 +176,17 @@ export default function IndexScreen() {
 
             {categoryRows.map((category) => {
               const isSelected = selectedCategoryId === String(category.id);
-
               return (
                 <Pressable
                   key={category.id}
                   accessibilityLabel={`Filter by ${category.name}`}
                   accessibilityRole="button"
                   onPress={() => setSelectedCategoryId(String(category.id))}
-                  style={[
-                    styles.filterChip,
-                    isSelected && styles.filterChipSelected,
-                  ]}
+                  style={[styles.filterChip, isSelected && styles.filterChipSelected]}
                 >
-                  <View
-                    style={[
-                      styles.filterDot,
-                      { backgroundColor: category.color },
-                    ]}
-                  />
+                  <View style={[styles.filterDot, { backgroundColor: category.color }]} />
                   <Text
-                    style={[
-                      styles.filterChipText,
-                      isSelected && styles.filterChipTextSelected,
-                    ]}
+                    style={[styles.filterChipText, isSelected && styles.filterChipTextSelected]}
                     numberOfLines={1}
                   >
                     {category.name}
@@ -185,48 +197,31 @@ export default function IndexScreen() {
           </View>
 
           <View style={styles.dateRow}>
-            <View style={styles.dateField}>
-              <Text style={styles.dateLabel}>From</Text>
-              <TextInput
-                accessibilityLabel="Filter trips from date"
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="numbers-and-punctuation"
-                maxLength={10}
-                onChangeText={setFromDate}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor="#94A3B8"
-                style={styles.dateInput}
-                value={fromDate}
-              />
-            </View>
-
-            <View style={styles.dateField}>
-              <Text style={styles.dateLabel}>To</Text>
-              <TextInput
-                accessibilityLabel="Filter trips to date"
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="numbers-and-punctuation"
-                maxLength={10}
-                onChangeText={setToDate}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor="#94A3B8"
-                style={styles.dateInput}
-                value={toDate}
-              />
-            </View>
+            <Text style={styles.dateLabel}>Date</Text>
+            <Pressable
+              accessibilityLabel="Filter trips by date"
+              accessibilityRole="button"
+              onPress={openDatePicker}
+              style={styles.datePicker}
+            >
+              <Ionicons name="calendar-outline" size={16} color="#64748B" style={styles.calendarIcon} />
+              <Text style={[styles.datePickerText, !filterDate && styles.datePickerPlaceholder]}>
+                {filterDate ? formatDisplay(filterDate) : 'Select a date'}
+              </Text>
+              {filterDate && (
+                <Pressable
+                  accessibilityLabel="Clear date filter"
+                  onPress={() => setFilterDate(null)}
+                  hitSlop={8}
+                >
+                  <Ionicons name="close-circle" size={18} color="#94A3B8" />
+                </Pressable>
+              )}
+            </Pressable>
           </View>
 
-          <View style={styles.helperRow}>
-            <Text style={styles.helperText}>
-              Date filter shows trips that overlap the selected range.
-            </Text>
-
-            {(searchQuery.length > 0 ||
-              selectedCategoryId !== ALL_CATEGORIES ||
-              fromDate.length > 0 ||
-              toDate.length > 0) && (
+          {hasActiveFilters && (
+            <View style={styles.helperRow}>
               <Pressable
                 accessibilityLabel="Clear all trip filters"
                 accessibilityRole="button"
@@ -234,8 +229,8 @@ export default function IndexScreen() {
               >
                 <Text style={styles.clearText}>Clear filters</Text>
               </Pressable>
-            )}
-          </View>
+            </View>
+          )}
         </>
       ) : null}
 
@@ -252,10 +247,32 @@ export default function IndexScreen() {
               trip.categoryId != null
                 ? categoryRows.find((item) => item.id === trip.categoryId) ?? null
                 : null;
-
             return <TripCard key={trip.id} trip={trip} category={category} />;
           })}
         </ScrollView>
+      )}
+
+      {Platform.OS === 'ios' && (
+        <Modal visible={iosPickerVisible} transparent animationType="slide">
+          <View style={styles.iosOverlay}>
+            <View style={styles.iosSheet}>
+              <Pressable
+                onPress={() => setIosPickerVisible(false)}
+                style={styles.iosDoneRow}
+              >
+                <Text style={styles.iosDoneText}>Done</Text>
+              </Pressable>
+              <DateTimePicker
+                value={filterDate ?? new Date()}
+                mode="date"
+                display="spinner"
+                onChange={(_e, date) => {
+                  if (date) setFilterDate(date);
+                }}
+              />
+            </View>
+          </View>
+        </Modal>
       )}
     </SafeAreaView>
   );
@@ -290,57 +307,46 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
-
-filterRow: {
-  flexDirection: 'row',
-  flexWrap: 'wrap',
-  marginTop: 12,
-  marginBottom: 4,
-},
-
-filterChip: {
-  alignItems: 'center',
-  alignSelf: 'flex-start',
-  backgroundColor: '#F8FAFC',
-  borderColor: '#94A3B8',
-  borderRadius: 999,
-  borderWidth: 1,
-  flexDirection: 'row',
-  marginRight: 8,
-  marginBottom: 8,
-  paddingHorizontal: 14,
-  paddingVertical: 9,
-},
-
-filterChipSelected: {
-  backgroundColor: '#0F172A',
-  borderColor: '#0F172A',
-},
-
-filterChipText: {
-  color: '#0F172A',
-  fontSize: 14,
-  fontWeight: '600',
-},
-
-filterChipTextSelected: {
-  color: '#FFFFFF',
-},
-
-filterDot: {
-  borderRadius: 999,
-  height: 8,
-  marginRight: 8,
-  width: 8,
-},
-
-  dateRow: {
+  filterRow: {
     flexDirection: 'row',
-    gap: 10,
+    flexWrap: 'wrap',
     marginTop: 12,
+    marginBottom: 4,
   },
-  dateField: {
-    flex: 1,
+  filterChip: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: '#F8FAFC',
+    borderColor: '#94A3B8',
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: 'row',
+    marginRight: 8,
+    marginBottom: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+  },
+  filterChipSelected: {
+    backgroundColor: '#0F172A',
+    borderColor: '#0F172A',
+  },
+  filterChipText: {
+    color: '#0F172A',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  filterChipTextSelected: {
+    color: '#FFFFFF',
+  },
+  filterDot: {
+    borderRadius: 999,
+    height: 8,
+    marginRight: 8,
+    width: 8,
+  },
+  dateRow: {
+    marginTop: 4,
+    marginBottom: 4,
   },
   dateLabel: {
     color: '#334155',
@@ -348,28 +354,31 @@ filterDot: {
     fontWeight: '600',
     marginBottom: 6,
   },
-  dateInput: {
+  datePicker: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderColor: '#CBD5E1',
     borderRadius: 12,
     borderWidth: 1,
-    color: '#0F172A',
-    fontSize: 15,
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
-  helperRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
-    marginBottom: 2,
+  calendarIcon: {
+    marginRight: 8,
   },
-  helperText: {
-    color: '#64748B',
+  datePickerText: {
     flex: 1,
-    fontSize: 12,
-    marginRight: 12,
+    color: '#0F172A',
+    fontSize: 15,
+  },
+  datePickerPlaceholder: {
+    color: '#94A3B8',
+  },
+  helperRow: {
+    alignItems: 'flex-end',
+    marginTop: 8,
+    marginBottom: 2,
   },
   clearText: {
     color: '#0F766E',
@@ -385,5 +394,28 @@ filterDot: {
     fontSize: 16,
     paddingTop: 16,
     textAlign: 'center',
+  },
+  iosOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  iosSheet: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingBottom: 32,
+  },
+  iosDoneRow: {
+    alignItems: 'flex-end',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomColor: '#E2E8F0',
+    borderBottomWidth: 1,
+  },
+  iosDoneText: {
+    color: '#0F172A',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

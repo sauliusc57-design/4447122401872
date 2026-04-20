@@ -1,7 +1,6 @@
-// Screen for creating a new trip. Lets the user pick an image from their library,
-// select a category, and fill in trip details before saving to SQLite.
 import CategoryFormModal from '@/components/ui/category-form-modal';
 import CategoryPicker from '@/components/ui/category-picker';
+import DatePickerField from '@/components/ui/date-picker-field';
 import FormField from '@/components/ui/form-field';
 import PrimaryButton from '@/components/ui/primary-button';
 import { db } from '@/db/client';
@@ -23,15 +22,25 @@ import { AuthContext } from '../_layout';
 
 type Category = typeof categories.$inferSelect;
 
+function toDateString(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 export default function AddTripScreen() {
   const router = useRouter();
   const auth = useContext(AuthContext);
   const currentUser = auth?.currentUser ?? null;
 
+  const today = new Date();
+
   const [title, setTitle] = useState('');
-  const [destination, setDestination] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [city, setCity] = useState('');
+  const [country, setCountry] = useState('');
+  const [startDate, setStartDate] = useState<Date>(today);
+  const [endDate, setEndDate] = useState<Date>(today);
   const [notes, setNotes] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [categoryRows, setCategoryRows] = useState<Category[]>([]);
@@ -81,16 +90,8 @@ export default function AddTripScreen() {
   };
 
   const saveTrip = async () => {
-    if (
-      !title.trim() ||
-      !destination.trim() ||
-      !startDate.trim() ||
-      !endDate.trim()
-    ) {
-      Alert.alert(
-        'Missing details',
-        'Please complete title, destination, start date, and end date.'
-      );
+    if (!title.trim() || !city.trim()) {
+      Alert.alert('Missing details', 'Please complete the title and city.');
       return;
     }
 
@@ -99,15 +100,19 @@ export default function AddTripScreen() {
       return;
     }
 
+    const destination = country.trim()
+      ? `${city.trim()}, ${country.trim()}`
+      : city.trim();
+
     const now = new Date().toISOString();
 
     await db.insert(trips).values({
       userId: currentUser!.id,
       categoryId: selectedCategoryId,
       title: title.trim(),
-      destination: destination.trim(),
-      startDate: startDate.trim(),
-      endDate: endDate.trim(),
+      destination,
+      startDate: toDateString(startDate),
+      endDate: toDateString(endDate),
       notes: notes.trim() ? notes.trim() : null,
       imageUri,
       createdAt: now,
@@ -150,24 +155,29 @@ export default function AddTripScreen() {
         />
 
         <FormField
-          label="Destination"
-          value={destination}
-          onChangeText={setDestination}
-          placeholder="Paris, France"
+          label="City"
+          value={city}
+          onChangeText={setCity}
+          placeholder="Paris"
         />
 
         <FormField
+          label="Country (optional)"
+          value={country}
+          onChangeText={setCountry}
+          placeholder="France"
+        />
+
+        <DatePickerField
           label="Start Date"
           value={startDate}
-          onChangeText={setStartDate}
-          placeholder="2026-06-12"
+          onChange={setStartDate}
         />
 
-        <FormField
+        <DatePickerField
           label="End Date"
           value={endDate}
-          onChangeText={setEndDate}
-          placeholder="2026-06-15"
+          onChange={setEndDate}
         />
 
         <FormField
