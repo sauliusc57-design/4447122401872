@@ -1,3 +1,4 @@
+// Horizontal scrollable row of category chips. Highlights the selected category and calls onSelect when tapped.
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 export type CategoryOption = {

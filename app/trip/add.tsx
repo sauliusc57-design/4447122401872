@@ -1,3 +1,5 @@
+// Screen for creating a new trip. Lets the user pick an image from their library,
+// select a category, and fill in trip details before saving to SQLite.
 import CategoryPicker from '@/components/ui/category-picker';
 import FormField from '@/components/ui/form-field';
 import PrimaryButton from '@/components/ui/primary-button';

@@ -1,4 +1,4 @@
-// components/TargetProgressCard.tsx
+// Card component showing a single target's progress with a progress bar, status badge (Met/Exceeded/Unmet), and edit/delete buttons.
 import PrimaryButton from '@/components/ui/primary-button';
 import { formatMetricValue, TargetProgress } from '@/lib/target-progress';
 import { StyleSheet, Text, View } from 'react-native';

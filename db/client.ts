@@ -1,4 +1,5 @@
-// db/client.ts
+// Opens the SQLite database, creates all tables if they don't exist, and applies any
+// schema migrations needed for older installs. Exports the Drizzle db client used across the app.
 import { drizzle } from 'drizzle-orm/expo-sqlite';
 import { openDatabaseSync } from 'expo-sqlite';
 
@@ -58,6 +59,7 @@ sqlite.execSync(`
   );
 `);
 
+// Migration: adds category_id to trips if it's missing (needed for installs created before that column was added).
 const tripColumns = sqlite.getAllSync(`PRAGMA table_info(trips)`) as Array<{
   name: string;
 }>;

@@ -1,3 +1,4 @@
+// Activity detail screen. Displays all fields for a single activity with options to edit or delete it.
 import PrimaryButton from '@/components/ui/primary-button';
 import { db } from '@/db/client';
 import { activities, categories, trips } from '@/db/schema';

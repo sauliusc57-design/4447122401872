@@ -3,11 +3,12 @@ import FormField from '@/components/ui/form-field';
 import PrimaryButton from '@/components/ui/primary-button';
 import { db } from '@/db/client';
 import { activities, categories, trips } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AuthContext } from '../../../_layout';
 
 type Trip = typeof trips.$inferSelect;
 type Category = typeof categories.$inferSelect;
@@ -15,6 +16,7 @@ type Category = typeof categories.$inferSelect;
 export default function AddActivityScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const auth = useContext(AuthContext);
 
   const [trip, setTrip] = useState<Trip | null>(null);
   const [categoryRows, setCategoryRows] = useState<Category[]>([]);
@@ -27,6 +29,10 @@ export default function AddActivityScreen() {
   const [notes, setNotes] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
 
+  if (!auth?.currentUser) return null;
+
+  const { currentUser } = auth;
+
   useEffect(() => {
     const loadData = async () => {
       if (!id) {
@@ -35,14 +41,21 @@ export default function AddActivityScreen() {
       }
 
       const [tripRows, categoryList] = await Promise.all([
-        db.select().from(trips).where(eq(trips.id, Number(id))),
-        db.select().from(categories),
+        db
+          .select()
+          .from(trips)
+          .where(and(eq(trips.id, Number(id)), eq(trips.userId, currentUser.id))),
+        db.select().from(categories).where(eq(categories.userId, currentUser.id)),
       ]);
 
       const foundTrip = tripRows[0] ?? null;
 
       setTrip(foundTrip);
       setCategoryRows(categoryList);
+
+      if (categoryList.length > 0) {
+        setSelectedCategoryId(categoryList[0].id);
+      }
 
       if (foundTrip) {
         setActivityDate(foundTrip.startDate);
@@ -52,16 +65,13 @@ export default function AddActivityScreen() {
     };
 
     loadData();
-  }, [id]);
+  }, [id, currentUser.id]);
 
   const saveActivity = async () => {
     if (!trip) return;
 
     if (!title.trim() || !activityDate.trim() || !durationMinutes.trim()) {
-      Alert.alert(
-        'Missing details',
-        'Please complete the title, date, and duration.'
-      );
+      Alert.alert('Missing details', 'Please complete the title, date, and duration.');
       return;
     }
 
@@ -121,26 +131,9 @@ export default function AddActivityScreen() {
           label="Activity Category"
         />
 
-        <FormField
-          label="Activity Title"
-          value={title}
-          onChangeText={setTitle}
-          placeholder="Visit Eiffel Tower"
-        />
-
-        <FormField
-          label="Activity Date"
-          value={activityDate}
-          onChangeText={setActivityDate}
-          placeholder="2026-06-13"
-        />
-
-        <FormField
-          label="Duration (minutes)"
-          value={durationMinutes}
-          onChangeText={setDurationMinutes}
-          placeholder="120"
-        />
+        <FormField label="Activity Title" value={title} onChangeText={setTitle} placeholder="Visit Eiffel Tower" />
+        <FormField label="Activity Date" value={activityDate} onChangeText={setActivityDate} placeholder="2026-06-13" />
+        <FormField label="Duration (minutes)" value={durationMinutes} onChangeText={setDurationMinutes} placeholder="120" />
 
         <Text style={styles.label}>Status</Text>
         <View style={styles.chipRow}>
@@ -148,12 +141,9 @@ export default function AddActivityScreen() {
             accessibilityRole="button"
             accessibilityLabel="Select planned status"
             onPress={() => setStatus('planned')}
-            style={[styles.chip, status === 'planned' && styles.chipSelected]}>
-            <Text
-              style={[
-                styles.chipText,
-                status === 'planned' && styles.chipTextSelected,
-              ]}>
+            style={[styles.chip, status === 'planned' && styles.chipSelected]}
+          >
+            <Text style={[styles.chipText, status === 'planned' && styles.chipTextSelected]}>
               Planned
             </Text>
           </Pressable>
@@ -162,12 +152,9 @@ export default function AddActivityScreen() {
             accessibilityRole="button"
             accessibilityLabel="Select completed status"
             onPress={() => setStatus('completed')}
-            style={[styles.chip, status === 'completed' && styles.chipSelected]}>
-            <Text
-              style={[
-                styles.chipText,
-                status === 'completed' && styles.chipTextSelected,
-              ]}>
+            style={[styles.chip, status === 'completed' && styles.chipSelected]}
+          >
+            <Text style={[styles.chipText, status === 'completed' && styles.chipTextSelected]}>
               Completed
             </Text>
           </Pressable>
@@ -184,11 +171,7 @@ export default function AddActivityScreen() {
         <View style={styles.buttonGroup}>
           <PrimaryButton label="Save Activity" onPress={saveActivity} />
           <View style={styles.spacer} />
-          <PrimaryButton
-            label="Cancel"
-            variant="secondary"
-            onPress={() => router.back()}
-          />
+          <PrimaryButton label="Cancel" variant="secondary" onPress={() => router.back()} />
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -1,4 +1,7 @@
-// db/seed.ts
+// Seeds the database with a demo user, categories, trips, activities, and targets on first run.
+// Safe to call on every app start — exits early if any trips already exist.
+import { eq } from 'drizzle-orm';
+import { hashPassword } from './auth';
 import { db } from './client';
 import { activities, categories, targets, trips, users } from './schema';
 
@@ -10,46 +13,86 @@ export async function seedHolidayPlannerIfEmpty() {
   }
 
   const now = new Date().toISOString();
+  const demoEmail = 'demo@planner.com';
+  const demoPasswordHash = await hashPassword('demo123');
 
-  await db.insert(users).values([
-    {
-      email: 'demo@planner.com',
-      passwordHash: 'demo123',
+  let demoUser = (
+    await db.select().from(users).where(eq(users.email, demoEmail))
+  )[0];
+
+  if (!demoUser) {
+    await db.insert(users).values({
+      email: demoEmail,
+      passwordHash: demoPasswordHash,
       createdAt: now,
-    },
-  ]);
+    });
+
+    demoUser = (
+      await db.select().from(users).where(eq(users.email, demoEmail))
+    )[0];
+  } else if (demoUser.passwordHash !== demoPasswordHash) {
+    await db
+      .update(users)
+      .set({ passwordHash: demoPasswordHash })
+      .where(eq(users.id, demoUser.id));
+
+    demoUser = (
+      await db.select().from(users).where(eq(users.email, demoEmail))
+    )[0];
+  }
+
+  const demoUserId = demoUser.id;
 
   await db.insert(categories).values([
     {
-      userId: 1,
+      userId: demoUserId,
       name: 'City Break',
       color: '#4F46E5',
       icon: 'map',
     },
     {
-      userId: 1,
+      userId: demoUserId,
       name: 'Food Trip',
       color: '#F59E0B',
       icon: 'restaurant',
     },
     {
-      userId: 1,
+      userId: demoUserId,
       name: 'Adventure',
       color: '#10B981',
       icon: 'compass',
     },
     {
-      userId: 1,
+      userId: demoUserId,
       name: 'Relaxation',
       color: '#EC4899',
       icon: 'bed',
     },
   ]);
 
+  const seededCategories = await db
+    .select()
+    .from(categories)
+    .where(eq(categories.userId, demoUserId));
+
+  const cityBreakCategory = seededCategories.find((item) => item.name === 'City Break');
+  const foodTripCategory = seededCategories.find((item) => item.name === 'Food Trip');
+  const adventureCategory = seededCategories.find((item) => item.name === 'Adventure');
+  const relaxationCategory = seededCategories.find((item) => item.name === 'Relaxation');
+
+  if (
+    !cityBreakCategory ||
+    !foodTripCategory ||
+    !adventureCategory ||
+    !relaxationCategory
+  ) {
+    throw new Error('Seed categories were not created correctly.');
+  }
+
   await db.insert(trips).values([
     {
-      userId: 1,
-      categoryId: 1,
+      userId: demoUserId,
+      categoryId: cityBreakCategory.id,
       title: 'Weekend in Paris',
       destination: 'Paris, France',
       startDate: '2026-06-12',
@@ -59,8 +102,8 @@ export async function seedHolidayPlannerIfEmpty() {
       createdAt: now,
     },
     {
-      userId: 1,
-      categoryId: 2,
+      userId: demoUserId,
+      categoryId: foodTripCategory.id,
       title: 'Summer in Rome',
       destination: 'Rome, Italy',
       startDate: '2026-08-03',
@@ -70,8 +113,8 @@ export async function seedHolidayPlannerIfEmpty() {
       createdAt: now,
     },
     {
-      userId: 1,
-      categoryId: 1,
+      userId: demoUserId,
+      categoryId: cityBreakCategory.id,
       title: 'Week in London',
       destination: 'London, England',
       startDate: '2026-09-05',
@@ -82,10 +125,20 @@ export async function seedHolidayPlannerIfEmpty() {
     },
   ]);
 
+  const seededTrips = await db.select().from(trips).where(eq(trips.userId, demoUserId));
+
+  const parisTrip = seededTrips.find((item) => item.title === 'Weekend in Paris');
+  const romeTrip = seededTrips.find((item) => item.title === 'Summer in Rome');
+  const londonTrip = seededTrips.find((item) => item.title === 'Week in London');
+
+  if (!parisTrip || !romeTrip || !londonTrip) {
+    throw new Error('Seed trips were not created correctly.');
+  }
+
   await db.insert(activities).values([
     {
-      tripId: 1,
-      categoryId: 1,
+      tripId: parisTrip.id,
+      categoryId: cityBreakCategory.id,
       title: 'Visit Eiffel Tower',
       activityDate: '2026-06-13',
       metricValue: 120,
@@ -95,8 +148,8 @@ export async function seedHolidayPlannerIfEmpty() {
       createdAt: now,
     },
     {
-      tripId: 1,
-      categoryId: 1,
+      tripId: parisTrip.id,
+      categoryId: cityBreakCategory.id,
       title: 'Louvre highlights visit',
       activityDate: '2026-06-14',
       metricValue: 150,
@@ -106,8 +159,8 @@ export async function seedHolidayPlannerIfEmpty() {
       createdAt: now,
     },
     {
-      tripId: 1,
-      categoryId: 2,
+      tripId: parisTrip.id,
+      categoryId: foodTripCategory.id,
       title: 'Dinner by the Seine',
       activityDate: '2026-06-13',
       metricValue: 90,
@@ -117,8 +170,8 @@ export async function seedHolidayPlannerIfEmpty() {
       createdAt: now,
     },
     {
-      tripId: 1,
-      categoryId: 3,
+      tripId: parisTrip.id,
+      categoryId: adventureCategory.id,
       title: 'Bike ride through central Paris',
       activityDate: '2026-06-14',
       metricValue: 75,
@@ -127,10 +180,9 @@ export async function seedHolidayPlannerIfEmpty() {
       notes: 'Short scenic ride between landmarks.',
       createdAt: now,
     },
-
     {
-      tripId: 2,
-      categoryId: 1,
+      tripId: romeTrip.id,
+      categoryId: cityBreakCategory.id,
       title: 'Visit the Colosseum',
       activityDate: '2026-08-04',
       metricValue: 140,
@@ -140,8 +192,8 @@ export async function seedHolidayPlannerIfEmpty() {
       createdAt: now,
     },
     {
-      tripId: 2,
-      categoryId: 2,
+      tripId: romeTrip.id,
+      categoryId: foodTripCategory.id,
       title: 'Pasta cooking class',
       activityDate: '2026-08-05',
       metricValue: 180,
@@ -151,8 +203,8 @@ export async function seedHolidayPlannerIfEmpty() {
       createdAt: now,
     },
     {
-      tripId: 2,
-      categoryId: 2,
+      tripId: romeTrip.id,
+      categoryId: foodTripCategory.id,
       title: 'Evening food tour',
       activityDate: '2026-08-06',
       metricValue: 120,
@@ -162,8 +214,8 @@ export async function seedHolidayPlannerIfEmpty() {
       createdAt: now,
     },
     {
-      tripId: 2,
-      categoryId: 4,
+      tripId: romeTrip.id,
+      categoryId: relaxationCategory.id,
       title: 'Spa afternoon',
       activityDate: '2026-08-07',
       metricValue: 90,
@@ -173,8 +225,8 @@ export async function seedHolidayPlannerIfEmpty() {
       createdAt: now,
     },
     {
-      tripId: 2,
-      categoryId: 1,
+      tripId: romeTrip.id,
+      categoryId: cityBreakCategory.id,
       title: 'Roman Forum walk',
       activityDate: '2026-08-08',
       metricValue: 110,
@@ -183,10 +235,9 @@ export async function seedHolidayPlannerIfEmpty() {
       notes: 'Self-guided walk after lunch.',
       createdAt: now,
     },
-
     {
-      tripId: 3,
-      categoryId: 1,
+      tripId: londonTrip.id,
+      categoryId: cityBreakCategory.id,
       title: 'British Museum visit',
       activityDate: '2026-09-06',
       metricValue: 150,
@@ -196,8 +247,8 @@ export async function seedHolidayPlannerIfEmpty() {
       createdAt: now,
     },
     {
-      tripId: 3,
-      categoryId: 2,
+      tripId: londonTrip.id,
+      categoryId: foodTripCategory.id,
       title: 'Borough Market lunch stop',
       activityDate: '2026-09-06',
       metricValue: 70,
@@ -207,8 +258,8 @@ export async function seedHolidayPlannerIfEmpty() {
       createdAt: now,
     },
     {
-      tripId: 3,
-      categoryId: 3,
+      tripId: londonTrip.id,
+      categoryId: adventureCategory.id,
       title: 'Hyde Park walk',
       activityDate: '2026-09-07',
       metricValue: 60,
@@ -218,8 +269,8 @@ export async function seedHolidayPlannerIfEmpty() {
       createdAt: now,
     },
     {
-      tripId: 3,
-      categoryId: 4,
+      tripId: londonTrip.id,
+      categoryId: relaxationCategory.id,
       title: 'West End evening show',
       activityDate: '2026-09-08',
       metricValue: 140,
@@ -232,8 +283,8 @@ export async function seedHolidayPlannerIfEmpty() {
 
   await db.insert(targets).values([
     {
-      userId: 1,
-      tripId: 1,
+      userId: demoUserId,
+      tripId: parisTrip.id,
       categoryId: null,
       period: 'weekly',
       metricType: 'count',
@@ -241,27 +292,26 @@ export async function seedHolidayPlannerIfEmpty() {
       createdAt: now,
     },
     {
-      userId: 1,
-      tripId: 1,
-      categoryId: 1,
+      userId: demoUserId,
+      tripId: parisTrip.id,
+      categoryId: cityBreakCategory.id,
       period: 'weekly',
       metricType: 'count',
       targetValue: 2,
       createdAt: now,
     },
     {
-      userId: 1,
-      tripId: 1,
-      categoryId: 2,
+      userId: demoUserId,
+      tripId: parisTrip.id,
+      categoryId: foodTripCategory.id,
       period: 'weekly',
       metricType: 'minutes',
       targetValue: 90,
       createdAt: now,
     },
-
     {
-      userId: 1,
-      tripId: 2,
+      userId: demoUserId,
+      tripId: romeTrip.id,
       categoryId: null,
       period: 'weekly',
       metricType: 'count',
@@ -269,40 +319,21 @@ export async function seedHolidayPlannerIfEmpty() {
       createdAt: now,
     },
     {
-      userId: 1,
-      tripId: 2,
-      categoryId: 2,
+      userId: demoUserId,
+      tripId: romeTrip.id,
+      categoryId: foodTripCategory.id,
       period: 'weekly',
       metricType: 'minutes',
-      targetValue: 300,
+      targetValue: 240,
       createdAt: now,
     },
     {
-      userId: 1,
-      tripId: 2,
-      categoryId: 1,
-      period: 'weekly',
-      metricType: 'count',
-      targetValue: 2,
-      createdAt: now,
-    },
-
-    {
-      userId: 1,
-      tripId: 3,
+      userId: demoUserId,
+      tripId: londonTrip.id,
       categoryId: null,
       period: 'weekly',
       metricType: 'count',
       targetValue: 3,
-      createdAt: now,
-    },
-    {
-      userId: 1,
-      tripId: 3,
-      categoryId: 1,
-      period: 'weekly',
-      metricType: 'minutes',
-      targetValue: 120,
       createdAt: now,
     },
   ]);

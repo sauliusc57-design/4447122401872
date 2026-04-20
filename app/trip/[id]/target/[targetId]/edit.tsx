@@ -1,20 +1,13 @@
-// app/trip/[id]/target/[targetId]/edit.tsx
 import FormField from '@/components/ui/form-field';
 import PrimaryButton from '@/components/ui/primary-button';
 import { db } from '@/db/client';
 import { categories, targets } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import {
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { useContext, useEffect, useState } from 'react';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AuthContext } from '../../../../_layout';
 
 type Category = typeof categories.$inferSelect;
 type Target = typeof targets.$inferSelect;
@@ -22,6 +15,7 @@ type Target = typeof targets.$inferSelect;
 export default function EditTargetScreen() {
   const { targetId } = useLocalSearchParams<{ targetId: string }>();
   const router = useRouter();
+  const auth = useContext(AuthContext);
 
   const [loading, setLoading] = useState(true);
   const [target, setTarget] = useState<Target | null>(null);
@@ -32,14 +26,22 @@ export default function EditTargetScreen() {
   const [targetValue, setTargetValue] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
 
+  if (!auth?.currentUser) return null;
+
+  const { currentUser } = auth;
+
   useEffect(() => {
     const loadData = async () => {
       const [targetRows, categoryData] = await Promise.all([
-        db.select().from(targets).where(eq(targets.id, Number(targetId))),
-        db.select().from(categories).where(eq(categories.userId, 1)),
+        db
+          .select()
+          .from(targets)
+          .where(and(eq(targets.id, Number(targetId)), eq(targets.userId, currentUser.id))),
+        db.select().from(categories).where(eq(categories.userId, currentUser.id)),
       ]);
 
       const foundTarget = targetRows[0] ?? null;
+
       setTarget(foundTarget);
       setCategoryRows(categoryData);
 
@@ -55,7 +57,7 @@ export default function EditTargetScreen() {
     };
 
     loadData();
-  }, [targetId]);
+  }, [targetId, currentUser.id]);
 
   const saveChanges = async () => {
     if (!target) return;
@@ -80,7 +82,7 @@ export default function EditTargetScreen() {
         metricType,
         targetValue: parsedValue,
       })
-      .where(eq(targets.id, target.id));
+      .where(and(eq(targets.id, target.id), eq(targets.userId, currentUser.id)));
 
     router.back();
   };
@@ -109,17 +111,11 @@ export default function EditTargetScreen() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Edit Target</Text>
-        <Text style={styles.subtitle}>
-          Update the target settings for this trip.
-        </Text>
+        <Text style={styles.subtitle}>Update the target settings for this trip.</Text>
 
         <Text style={styles.groupLabel}>Target Scope</Text>
         <View style={styles.chipRow}>
-          <Chip
-            label="Whole Trip"
-            selected={scope === 'trip'}
-            onPress={() => setScope('trip')}
-          />
+          <Chip label="Whole Trip" selected={scope === 'trip'} onPress={() => setScope('trip')} />
           <Chip
             label="Specific Category"
             selected={scope === 'category'}
@@ -145,47 +141,27 @@ export default function EditTargetScreen() {
 
         <Text style={styles.groupLabel}>Period</Text>
         <View style={styles.chipRow}>
-          <Chip
-            label="Weekly"
-            selected={period === 'weekly'}
-            onPress={() => setPeriod('weekly')}
-          />
-          <Chip
-            label="Monthly"
-            selected={period === 'monthly'}
-            onPress={() => setPeriod('monthly')}
-          />
+          <Chip label="Weekly" selected={period === 'weekly'} onPress={() => setPeriod('weekly')} />
+          <Chip label="Monthly" selected={period === 'monthly'} onPress={() => setPeriod('monthly')} />
         </View>
 
         <Text style={styles.groupLabel}>Goal Type</Text>
-          <View style={styles.chipRow}>
-            <Chip
-              label="Activities"
-              selected={metricType === 'count'}
-              onPress={() => setMetricType('count')}
-            />
-            <Chip
-              label="Minutes"
-              selected={metricType === 'minutes'}
-              onPress={() => setMetricType('minutes')}
-            />
-          </View>
+        <View style={styles.chipRow}>
+          <Chip label="Activities" selected={metricType === 'count'} onPress={() => setMetricType('count')} />
+          <Chip label="Minutes" selected={metricType === 'minutes'} onPress={() => setMetricType('minutes')} />
+        </View>
 
-          <FormField
-            label={`Target Value (${metricType === 'minutes' ? 'minutes' : 'activities'})`}
-            value={targetValue}
-            onChangeText={setTargetValue}
-            placeholder={metricType === 'minutes' ? '240' : '3'}
-          />
+        <FormField
+          label={`Target Value (${metricType === 'minutes' ? 'minutes' : 'activities'})`}
+          value={targetValue}
+          onChangeText={setTargetValue}
+          placeholder={metricType === 'minutes' ? '240' : '3'}
+        />
 
         <View style={styles.buttonGroup}>
           <PrimaryButton label="Save Changes" onPress={saveChanges} />
           <View style={styles.spacer} />
-          <PrimaryButton
-            label="Cancel"
-            variant="secondary"
-            onPress={() => router.back()}
-          />
+          <PrimaryButton label="Cancel" variant="secondary" onPress={() => router.back()} />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -208,9 +184,7 @@ function Chip({
       onPress={onPress}
       style={[styles.chip, selected && styles.chipSelected]}
     >
-      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
-        {label}
-      </Text>
+      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{label}</Text>
     </Pressable>
   );
 }

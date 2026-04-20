@@ -1,3 +1,5 @@
+// Utility functions for calculating target progress against a trip's completed activities.
+// Used by the trip detail screen and TargetProgressCard to show progress bars and status badges.
 import { activities, categories, targets, trips } from '@/db/schema';
 
 export type ActivityRow = typeof activities.$inferSelect;
@@ -45,6 +47,8 @@ function getMonthKey(dateString: string) {
   return dateString.slice(0, 7);
 }
 
+// Counts how many distinct weeks or months fall within the trip's date range,
+// so the expected total can be scaled correctly (e.g. 3 weeks × 2 activities/week = 6 expected).
 function getCoveredPeriodCount(startDate: string, endDate: string, period: string) {
   const keys = new Set<string>();
   let cursor = startOfDay(startDate);
@@ -75,6 +79,8 @@ export function formatMetricValue(metricType: string, value: number) {
   return `${value} ${getMetricUnit(metricType, value)}`;
 }
 
+// Main calculation: computes progress value, expected total, remaining, exceeded amount,
+// percentage, and status (unmet/met/exceeded) for a single target against a trip's activities.
 export function calculateTargetProgress(params: {
   trip: TripRow;
   target: TargetRow;

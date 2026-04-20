@@ -2,19 +2,22 @@ import CategoryPicker from '@/components/ui/category-picker';
 import FormField from '@/components/ui/form-field';
 import PrimaryButton from '@/components/ui/primary-button';
 import { db } from '@/db/client';
-import { activities, categories } from '@/db/schema';
+import { activities, categories, trips } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AuthContext } from '../../../../_layout';
 
 type Activity = typeof activities.$inferSelect;
 type Category = typeof categories.$inferSelect;
+type Trip = typeof trips.$inferSelect;
 
 export default function EditActivityScreen() {
   const { activityId } = useLocalSearchParams<{ activityId: string }>();
   const router = useRouter();
+  const auth = useContext(AuthContext);
 
   const [loading, setLoading] = useState(true);
   const [existingActivity, setExistingActivity] = useState<Activity | null>(null);
@@ -27,6 +30,10 @@ export default function EditActivityScreen() {
   const [notes, setNotes] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
 
+  if (!auth?.currentUser) return null;
+
+  const { currentUser } = auth;
+
   useEffect(() => {
     const loadActivity = async () => {
       if (!activityId) {
@@ -34,39 +41,42 @@ export default function EditActivityScreen() {
         return;
       }
 
-      const [activityRows, categoryList] = await Promise.all([
+      const [activityRows, categoryList, userTrips] = await Promise.all([
         db.select().from(activities).where(eq(activities.id, Number(activityId))),
-        db.select().from(categories),
+        db.select().from(categories).where(eq(categories.userId, currentUser.id)),
+        db.select().from(trips).where(eq(trips.userId, currentUser.id)),
       ]);
 
       const foundActivity = activityRows[0] ?? null;
+      const userTripIds = userTrips.map((trip: Trip) => trip.id);
+
+      if (!foundActivity || !userTripIds.includes(foundActivity.tripId)) {
+        setExistingActivity(null);
+        setCategoryRows(categoryList);
+        setLoading(false);
+        return;
+      }
 
       setExistingActivity(foundActivity);
       setCategoryRows(categoryList);
-
-      if (foundActivity) {
-        setTitle(foundActivity.title);
-        setActivityDate(foundActivity.activityDate);
-        setDurationMinutes(String(foundActivity.metricValue));
-        setStatus(foundActivity.status === 'completed' ? 'completed' : 'planned');
-        setNotes(foundActivity.notes ?? '');
-        setSelectedCategoryId(foundActivity.categoryId);
-      }
+      setTitle(foundActivity.title);
+      setActivityDate(foundActivity.activityDate);
+      setDurationMinutes(String(foundActivity.metricValue));
+      setStatus(foundActivity.status === 'completed' ? 'completed' : 'planned');
+      setNotes(foundActivity.notes ?? '');
+      setSelectedCategoryId(foundActivity.categoryId);
 
       setLoading(false);
     };
 
     loadActivity();
-  }, [activityId]);
+  }, [activityId, currentUser.id]);
 
   const saveActivity = async () => {
     if (!existingActivity) return;
 
     if (!title.trim() || !activityDate.trim() || !durationMinutes.trim()) {
-      Alert.alert(
-        'Missing details',
-        'Please complete the title, date, and duration.'
-      );
+      Alert.alert('Missing details', 'Please complete the title, date, and duration.');
       return;
     }
 
@@ -127,26 +137,9 @@ export default function EditActivityScreen() {
           label="Activity Category"
         />
 
-        <FormField
-          label="Activity Title"
-          value={title}
-          onChangeText={setTitle}
-          placeholder="Visit Eiffel Tower"
-        />
-
-        <FormField
-          label="Activity Date"
-          value={activityDate}
-          onChangeText={setActivityDate}
-          placeholder="2026-06-13"
-        />
-
-        <FormField
-          label="Duration (minutes)"
-          value={durationMinutes}
-          onChangeText={setDurationMinutes}
-          placeholder="120"
-        />
+        <FormField label="Activity Title" value={title} onChangeText={setTitle} placeholder="Visit Eiffel Tower" />
+        <FormField label="Activity Date" value={activityDate} onChangeText={setActivityDate} placeholder="2026-06-13" />
+        <FormField label="Duration (minutes)" value={durationMinutes} onChangeText={setDurationMinutes} placeholder="120" />
 
         <Text style={styles.label}>Status</Text>
         <View style={styles.chipRow}>
@@ -154,12 +147,9 @@ export default function EditActivityScreen() {
             accessibilityRole="button"
             accessibilityLabel="Select planned status"
             onPress={() => setStatus('planned')}
-            style={[styles.chip, status === 'planned' && styles.chipSelected]}>
-            <Text
-              style={[
-                styles.chipText,
-                status === 'planned' && styles.chipTextSelected,
-              ]}>
+            style={[styles.chip, status === 'planned' && styles.chipSelected]}
+          >
+            <Text style={[styles.chipText, status === 'planned' && styles.chipTextSelected]}>
               Planned
             </Text>
           </Pressable>
@@ -168,12 +158,9 @@ export default function EditActivityScreen() {
             accessibilityRole="button"
             accessibilityLabel="Select completed status"
             onPress={() => setStatus('completed')}
-            style={[styles.chip, status === 'completed' && styles.chipSelected]}>
-            <Text
-              style={[
-                styles.chipText,
-                status === 'completed' && styles.chipTextSelected,
-              ]}>
+            style={[styles.chip, status === 'completed' && styles.chipSelected]}
+          >
+            <Text style={[styles.chipText, status === 'completed' && styles.chipTextSelected]}>
               Completed
             </Text>
           </Pressable>
@@ -190,11 +177,7 @@ export default function EditActivityScreen() {
         <View style={styles.buttonGroup}>
           <PrimaryButton label="Save Changes" onPress={saveActivity} />
           <View style={styles.spacer} />
-          <PrimaryButton
-            label="Cancel"
-            variant="secondary"
-            onPress={() => router.back()}
-          />
+          <PrimaryButton label="Cancel" variant="secondary" onPress={() => router.back()} />
         </View>
       </ScrollView>
     </SafeAreaView>

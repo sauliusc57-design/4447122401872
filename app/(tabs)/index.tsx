@@ -1,11 +1,13 @@
+// Main trips list screen. Loads the logged-in user's trips and categories from SQLite,
+// and lets them filter by text search, category, and date range.
 import TripCard from '@/components/TripCard';
 import PrimaryButton from '@/components/ui/primary-button';
 import { db } from '@/db/client';
 import { categories, trips } from '@/db/schema';
-import { seedHolidayPlannerIfEmpty } from '@/db/seed';
 import { useFocusEffect } from '@react-navigation/native';
+import { eq } from 'drizzle-orm';
 import { useRouter } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useContext, useMemo, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -15,6 +17,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AuthContext } from '../_layout';
 
 type Trip = typeof trips.$inferSelect;
 type Category = typeof categories.$inferSelect;
@@ -36,18 +39,23 @@ export default function IndexScreen() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>(ALL_CATEGORIES);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
+  const auth = useContext(AuthContext);
 
+  if (!auth?.currentUser) return null;
+
+  const { currentUser } = auth;
+
+  // Reloads trips and categories each time the screen comes into focus (e.g. after adding or editing a trip).
   useFocusEffect(
     useCallback(() => {
       let active = true;
 
       const loadTrips = async () => {
         setLoading(true);
-        await seedHolidayPlannerIfEmpty();
 
         const [tripData, categoryData] = await Promise.all([
-          db.select().from(trips),
-          db.select().from(categories),
+          db.select().from(trips).where(eq(trips.userId, currentUser.id)),
+          db.select().from(categories).where(eq(categories.userId, currentUser.id)),
         ]);
 
         if (active) {
@@ -69,6 +77,7 @@ export default function IndexScreen() {
   const validFromDate = isFullIsoDate(fromDate.trim()) ? fromDate.trim() : '';
   const validToDate = isFullIsoDate(toDate.trim()) ? toDate.trim() : '';
 
+  // Derives the filtered trip list from raw data. Runs only when trips or filter values change.
   const filteredTrips = useMemo(() => {
     return tripRows.filter((trip) => {
       const matchesSearch =

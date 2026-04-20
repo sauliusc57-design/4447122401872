@@ -1,3 +1,5 @@
+// Displays a trip as a pressable card showing its image, title, destination, dates, category, and notes.
+// Tapping the card navigates to the trip detail screen.
 import { useRouter } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -27,6 +29,7 @@ type Props = {
   category: Category | null;
 };
 
+// Bundled images for the three demo trips — used as fallback when a trip has no saved imageUri.
 const seededImages: Record<string, any> = {
   'Weekend in Paris': require('../assets/images/trips/Paris.jpg'),
   'Summer in Rome': require('../assets/images/trips/Rome.jpg'),

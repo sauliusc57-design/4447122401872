@@ -1,3 +1,5 @@
+// Drizzle ORM table definitions for the local SQLite database.
+// Defines five tables: users, categories, trips, activities, and targets.
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 export const users = sqliteTable('users', {

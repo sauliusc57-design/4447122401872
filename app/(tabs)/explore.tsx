@@ -1,15 +1,17 @@
 import PrimaryButton from '@/components/ui/primary-button';
 import { db } from '@/db/client';
-import { activities, categories } from '@/db/schema';
-import { seedHolidayPlannerIfEmpty } from '@/db/seed';
+import { activities, categories, trips } from '@/db/schema';
 import { useFocusEffect } from '@react-navigation/native';
-import { useCallback, useMemo, useState } from 'react';
+import { eq } from 'drizzle-orm';
+import { useCallback, useContext, useMemo, useState } from 'react';
 import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { BarChart, LineChart, PieChart } from 'react-native-chart-kit';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AuthContext } from '../_layout';
 
 type Activity = typeof activities.$inferSelect;
 type Category = typeof categories.$inferSelect;
+type Trip = typeof trips.$inferSelect;
 type Period = 'daily' | 'weekly' | 'monthly';
 
 const screenWidth = Dimensions.get('window').width;
@@ -36,10 +38,16 @@ function formatPeriodLabel(key: string, period: Period) {
 }
 
 export default function InsightsScreen() {
+  const auth = useContext(AuthContext);
+
   const [activityRows, setActivityRows] = useState<Activity[]>([]);
   const [categoryRows, setCategoryRows] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<Period>('daily');
+
+  if (!auth?.currentUser) return null;
+
+  const { currentUser } = auth;
 
   useFocusEffect(
     useCallback(() => {
@@ -47,16 +55,22 @@ export default function InsightsScreen() {
 
       const loadInsightsData = async () => {
         setLoading(true);
-        await seedHolidayPlannerIfEmpty();
 
-        const [activityData, categoryData] = await Promise.all([
+        const [userTrips, allActivities, userCategories] = await Promise.all([
+          db.select().from(trips).where(eq(trips.userId, currentUser.id)),
           db.select().from(activities),
-          db.select().from(categories),
+          db.select().from(categories).where(eq(categories.userId, currentUser.id)),
         ]);
 
+        const tripIds = userTrips.map((trip: Trip) => trip.id);
+
+        const filteredActivities = allActivities.filter((activity) =>
+          tripIds.includes(activity.tripId)
+        );
+
         if (active) {
-          setActivityRows(activityData);
-          setCategoryRows(categoryData);
+          setActivityRows(filteredActivities);
+          setCategoryRows(userCategories);
           setLoading(false);
         }
       };
@@ -66,7 +80,7 @@ export default function InsightsScreen() {
       return () => {
         active = false;
       };
-    }, [])
+    }, [currentUser.id])
   );
 
   const activitiesOverTime = useMemo(() => {
@@ -97,12 +111,12 @@ export default function InsightsScreen() {
     }, {});
 
     return Object.entries(grouped)
-      .map(([categoryId, total], index) => {
+      .map(([categoryId, count], index) => {
         const category = categoryRows.find((item) => item.id === Number(categoryId));
 
         return {
           name: category?.name ?? 'Unknown',
-          count: total,
+          count,
           color: category?.color ?? ['#0F172A', '#334155', '#64748B', '#94A3B8'][index % 4],
           legendFontColor: '#334155',
           legendFontSize: 13,
@@ -137,7 +151,6 @@ export default function InsightsScreen() {
   }, [activityRows, categoryRows]);
 
   const totalActivities = activityRows.length;
-
   const totalMinutes = activityRows.reduce((sum, activity) => {
     return activity.metricType === 'minutes' ? sum + activity.metricValue : sum;
   }, 0);
@@ -209,13 +222,11 @@ export default function InsightsScreen() {
           <>
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Activities over time</Text>
-              <Text style={styles.sectionSubtitle}>
-                Number of activities in the selected period
-              </Text>
+              <Text style={styles.sectionSubtitle}>Number of activities in the selected period</Text>
 
               <LineChart
                 data={{
-                  labels: activitiesOverTime.labels,
+                  labels: activitiesOverTime.labels.length ? activitiesOverTime.labels : ['No data'],
                   datasets: [{ data: activitiesOverTime.values.length ? activitiesOverTime.values : [0] }],
                 }}
                 width={chartWidth}
@@ -229,9 +240,7 @@ export default function InsightsScreen() {
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Activities by category</Text>
-              <Text style={styles.sectionSubtitle}>
-                Distribution of all saved activities
-              </Text>
+              <Text style={styles.sectionSubtitle}>Distribution of all saved activities</Text>
 
               <PieChart
                 data={
@@ -260,23 +269,18 @@ export default function InsightsScreen() {
                 backgroundColor="transparent"
                 paddingLeft="8"
                 absolute
+                style={styles.chart}
               />
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Time spent per category</Text>
-              <Text style={styles.sectionSubtitle}>
-                Total minutes from activities where metric type is minutes
-              </Text>
+              <Text style={styles.sectionTitle}>Minutes by category</Text>
+              <Text style={styles.sectionSubtitle}>Total time spent by category</Text>
 
               <BarChart
                 data={{
-                  labels: minutesByCategory.labels.length ? minutesByCategory.labels : ['None'],
-                  datasets: [
-                    {
-                      data: minutesByCategory.values.length ? minutesByCategory.values : [0],
-                    },
-                  ],
+                  labels: minutesByCategory.labels.length ? minutesByCategory.labels : ['No data'],
+                  datasets: [{ data: minutesByCategory.values.length ? minutesByCategory.values : [0] }],
                 }}
                 width={chartWidth}
                 height={240}
@@ -284,8 +288,7 @@ export default function InsightsScreen() {
                 style={styles.chart}
                 fromZero
                 yAxisLabel=""
-                yAxisSuffix="m"
-                showValuesOnTopOfBars
+                yAxisSuffix=""
               />
             </View>
           </>
@@ -297,78 +300,79 @@ export default function InsightsScreen() {
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: '#F8FAFC',
     flex: 1,
+    backgroundColor: '#F8FAFC',
   },
   content: {
-    paddingHorizontal: 18,
-    paddingTop: 10,
-    paddingBottom: 24,
+    padding: 18,
+    paddingBottom: 28,
   },
   title: {
     color: '#0F172A',
     fontSize: 28,
     fontWeight: '700',
+    marginBottom: 4,
   },
   subtitle: {
     color: '#475569',
     fontSize: 15,
-    marginTop: 4,
-    marginBottom: 14,
+    marginBottom: 16,
   },
   summaryGrid: {
-    gap: 12,
+    gap: 10,
     marginBottom: 14,
   },
   summaryCard: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
+    borderColor: '#CBD5E1',
     borderRadius: 14,
     borderWidth: 1,
     padding: 14,
   },
   summaryLabel: {
-    color: '#64748B',
+    color: '#475569',
     fontSize: 13,
     fontWeight: '600',
+    marginBottom: 6,
   },
   summaryValue: {
     color: '#0F172A',
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '700',
-    marginTop: 6,
   },
   summaryValueSmall: {
     color: '#0F172A',
     fontSize: 20,
     fontWeight: '700',
-    marginTop: 6,
   },
   toggleRow: {
-    gap: 10,
+    gap: 8,
     marginBottom: 16,
   },
   section: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E2E8F0',
+    borderColor: '#CBD5E1',
     borderRadius: 14,
     borderWidth: 1,
     marginBottom: 16,
-    padding: 14,
+    paddingVertical: 14,
   },
   sectionTitle: {
     color: '#0F172A',
     fontSize: 18,
     fontWeight: '700',
+    paddingHorizontal: 14,
   },
   sectionSubtitle: {
     color: '#64748B',
     fontSize: 13,
+    paddingHorizontal: 14,
     marginTop: 4,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   chart: {
     borderRadius: 12,
+    marginLeft: -6,
   },
   message: {
     color: '#475569',

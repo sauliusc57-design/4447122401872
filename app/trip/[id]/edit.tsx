@@ -3,19 +3,13 @@ import FormField from '@/components/ui/form-field';
 import PrimaryButton from '@/components/ui/primary-button';
 import { db } from '@/db/client';
 import { categories, trips } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import {
-  Alert,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { useContext, useEffect, useState } from 'react';
+import { Alert, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AuthContext } from '../../_layout';
 
 type Trip = typeof trips.$inferSelect;
 type Category = typeof categories.$inferSelect;
@@ -29,6 +23,7 @@ const seededImages: Record<string, any> = {
 export default function EditTripScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const auth = useContext(AuthContext);
 
   const [loading, setLoading] = useState(true);
   const [existingTrip, setExistingTrip] = useState<Trip | null>(null);
@@ -42,13 +37,23 @@ export default function EditTripScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
 
+  if (!auth?.currentUser) return null;
+
+  const { currentUser } = auth;
+
   useEffect(() => {
     const loadTrip = async () => {
-      if (!id) return;
+      if (!id) {
+        setLoading(false);
+        return;
+      }
 
       const [tripRows, categoryList] = await Promise.all([
-        db.select().from(trips).where(eq(trips.id, Number(id))),
-        db.select().from(categories),
+        db
+          .select()
+          .from(trips)
+          .where(and(eq(trips.id, Number(id)), eq(trips.userId, currentUser.id))),
+        db.select().from(categories).where(eq(categories.userId, currentUser.id)),
       ]);
 
       const trip = tripRows[0] ?? null;
@@ -70,7 +75,7 @@ export default function EditTripScreen() {
     };
 
     loadTrip();
-  }, [id]);
+  }, [id, currentUser.id]);
 
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -93,12 +98,7 @@ export default function EditTripScreen() {
   };
 
   const saveTrip = async () => {
-    if (
-      !title.trim() ||
-      !destination.trim() ||
-      !startDate.trim() ||
-      !endDate.trim()
-    ) {
+    if (!title.trim() || !destination.trim() || !startDate.trim() || !endDate.trim()) {
       Alert.alert(
         'Missing details',
         'Please complete title, destination, start date, and end date.'
@@ -122,7 +122,7 @@ export default function EditTripScreen() {
         notes: notes.trim() ? notes.trim() : null,
         imageUri,
       })
-      .where(eq(trips.id, Number(id)));
+      .where(and(eq(trips.id, Number(id)), eq(trips.userId, currentUser.id)));
 
     router.back();
   };
@@ -144,8 +144,7 @@ export default function EditTripScreen() {
   }
 
   const fallbackImage = seededImages[existingTrip.title];
-  const hasValidLocalImage =
-    typeof imageUri === 'string' && imageUri.length > 0;
+  const hasValidLocalImage = typeof imageUri === 'string' && imageUri.length > 0;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -156,17 +155,9 @@ export default function EditTripScreen() {
         <PrimaryButton label="Choose New Image" onPress={pickImage} />
 
         {hasValidLocalImage ? (
-          <Image
-            source={{ uri: imageUri! }}
-            style={styles.previewImage}
-            resizeMode="cover"
-          />
+          <Image source={{ uri: imageUri! }} style={styles.previewImage} resizeMode="cover" />
         ) : fallbackImage ? (
-          <Image
-            source={fallbackImage}
-            style={styles.previewImage}
-            resizeMode="cover"
-          />
+          <Image source={fallbackImage} style={styles.previewImage} resizeMode="cover" />
         ) : (
           <Text style={styles.helperText}>No image selected yet.</Text>
         )}
@@ -178,34 +169,10 @@ export default function EditTripScreen() {
           label="Trip Category"
         />
 
-        <FormField
-          label="Trip Title"
-          value={title}
-          onChangeText={setTitle}
-          placeholder="Weekend in Paris"
-        />
-
-        <FormField
-          label="Destination"
-          value={destination}
-          onChangeText={setDestination}
-          placeholder="Paris, France"
-        />
-
-        <FormField
-          label="Start Date"
-          value={startDate}
-          onChangeText={setStartDate}
-          placeholder="2026-06-12"
-        />
-
-        <FormField
-          label="End Date"
-          value={endDate}
-          onChangeText={setEndDate}
-          placeholder="2026-06-15"
-        />
-
+        <FormField label="Trip Title" value={title} onChangeText={setTitle} placeholder="Weekend in Paris" />
+        <FormField label="Destination" value={destination} onChangeText={setDestination} placeholder="Paris, France" />
+        <FormField label="Start Date" value={startDate} onChangeText={setStartDate} placeholder="2026-06-12" />
+        <FormField label="End Date" value={endDate} onChangeText={setEndDate} placeholder="2026-06-15" />
         <FormField
           label="Notes"
           value={notes}
@@ -217,11 +184,7 @@ export default function EditTripScreen() {
         <View style={styles.buttonGroup}>
           <PrimaryButton label="Save Changes" onPress={saveTrip} />
           <View style={styles.spacer} />
-          <PrimaryButton
-            label="Cancel"
-            variant="secondary"
-            onPress={() => router.back()}
-          />
+          <PrimaryButton label="Cancel" variant="secondary" onPress={() => router.back()} />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -268,7 +231,7 @@ const styles = StyleSheet.create({
   message: {
     color: '#475569',
     fontSize: 16,
-    paddingTop: 24,
     textAlign: 'center',
+    paddingTop: 24,
   },
 });

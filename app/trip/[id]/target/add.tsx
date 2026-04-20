@@ -4,15 +4,17 @@ import { db } from '@/db/client';
 import { categories, targets } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AuthContext } from '../../../_layout';
 
 type Category = typeof categories.$inferSelect;
 
 export default function AddTargetScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const auth = useContext(AuthContext);
 
   const [categoryRows, setCategoryRows] = useState<Category[]>([]);
   const [scope, setScope] = useState<'trip' | 'category'>('trip');
@@ -21,9 +23,17 @@ export default function AddTargetScreen() {
   const [targetValue, setTargetValue] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
 
+  if (!auth?.currentUser) return null;
+
+  const { currentUser } = auth;
+
   useEffect(() => {
     const loadCategories = async () => {
-      const rows = await db.select().from(categories).where(eq(categories.userId, 1));
+      const rows = await db
+        .select()
+        .from(categories)
+        .where(eq(categories.userId, currentUser.id));
+
       setCategoryRows(rows);
 
       if (rows.length > 0) {
@@ -32,7 +42,7 @@ export default function AddTargetScreen() {
     };
 
     loadCategories();
-  }, []);
+  }, [currentUser.id]);
 
   const saveTarget = async () => {
     const parsedValue = Number(targetValue);
@@ -48,7 +58,7 @@ export default function AddTargetScreen() {
     }
 
     await db.insert(targets).values({
-      userId: 1,
+      userId: currentUser.id,
       tripId: Number(id),
       categoryId: scope === 'category' ? selectedCategoryId : null,
       period,
@@ -64,17 +74,11 @@ export default function AddTargetScreen() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Add Target</Text>
-        <Text style={styles.subtitle}>
-          Create a weekly or monthly goal for this trip.
-        </Text>
+        <Text style={styles.subtitle}>Create a weekly or monthly goal for this trip.</Text>
 
         <Text style={styles.groupLabel}>Target Scope</Text>
         <View style={styles.chipRow}>
-          <Chip
-            label="Whole Trip"
-            selected={scope === 'trip'}
-            onPress={() => setScope('trip')}
-          />
+          <Chip label="Whole Trip" selected={scope === 'trip'} onPress={() => setScope('trip')} />
           <Chip
             label="Specific Category"
             selected={scope === 'category'}
@@ -100,30 +104,14 @@ export default function AddTargetScreen() {
 
         <Text style={styles.groupLabel}>Period</Text>
         <View style={styles.chipRow}>
-          <Chip
-            label="Weekly"
-            selected={period === 'weekly'}
-            onPress={() => setPeriod('weekly')}
-          />
-          <Chip
-            label="Monthly"
-            selected={period === 'monthly'}
-            onPress={() => setPeriod('monthly')}
-          />
+          <Chip label="Weekly" selected={period === 'weekly'} onPress={() => setPeriod('weekly')} />
+          <Chip label="Monthly" selected={period === 'monthly'} onPress={() => setPeriod('monthly')} />
         </View>
 
         <Text style={styles.groupLabel}>Goal Type</Text>
         <View style={styles.chipRow}>
-          <Chip
-            label="Activities"
-            selected={metricType === 'count'}
-            onPress={() => setMetricType('count')}
-          />
-          <Chip
-            label="Minutes"
-            selected={metricType === 'minutes'}
-            onPress={() => setMetricType('minutes')}
-          />
+          <Chip label="Activities" selected={metricType === 'count'} onPress={() => setMetricType('count')} />
+          <Chip label="Minutes" selected={metricType === 'minutes'} onPress={() => setMetricType('minutes')} />
         </View>
 
         <FormField
@@ -136,11 +124,7 @@ export default function AddTargetScreen() {
         <View style={styles.buttonGroup}>
           <PrimaryButton label="Save Target" onPress={saveTarget} />
           <View style={styles.spacer} />
-          <PrimaryButton
-            label="Cancel"
-            variant="secondary"
-            onPress={() => router.back()}
-          />
+          <PrimaryButton label="Cancel" variant="secondary" onPress={() => router.back()} />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -161,10 +145,9 @@ function Chip({
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
-      style={[styles.chip, selected && styles.chipSelected]}>
-      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
-        {label}
-      </Text>
+      style={[styles.chip, selected && styles.chipSelected]}
+    >
+      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{label}</Text>
     </Pressable>
   );
 }

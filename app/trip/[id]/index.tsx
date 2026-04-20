@@ -4,19 +4,12 @@ import { db } from '@/db/client';
 import { activities, categories, targets, trips } from '@/db/schema';
 import { calculateTargetProgress } from '@/lib/target-progress';
 import { useFocusEffect } from '@react-navigation/native';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
-import {
-  Alert,
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { useCallback, useContext, useState } from 'react';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AuthContext } from '../../_layout';
 
 type Trip = typeof trips.$inferSelect;
 type Category = typeof categories.$inferSelect;
@@ -32,6 +25,7 @@ const seededImages: Record<string, any> = {
 export default function TripDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const auth = useContext(AuthContext);
 
   const [trip, setTrip] = useState<Trip | null>(null);
   const [category, setCategory] = useState<Category | null>(null);
@@ -39,6 +33,10 @@ export default function TripDetailScreen() {
   const [activityRows, setActivityRows] = useState<Activity[]>([]);
   const [targetRows, setTargetRows] = useState<Target[]>([]);
   const [loading, setLoading] = useState(true);
+
+  if (!auth?.currentUser) return null;
+
+  const { currentUser } = auth;
 
   useFocusEffect(
     useCallback(() => {
@@ -52,25 +50,36 @@ export default function TripDetailScreen() {
 
         setLoading(true);
 
-        const [tripRows, allCategories, allActivities, allTargets] = await Promise.all([
-          db.select().from(trips).where(eq(trips.id, Number(id))),
-          db.select().from(categories),
+        const [tripRows, userCategories, allActivities, userTargets] = await Promise.all([
+          db
+            .select()
+            .from(trips)
+            .where(and(eq(trips.id, Number(id)), eq(trips.userId, currentUser.id))),
+          db.select().from(categories).where(eq(categories.userId, currentUser.id)),
           db.select().from(activities),
-          db.select().from(targets).where(eq(targets.tripId, Number(id))),
+          db
+            .select()
+            .from(targets)
+            .where(and(eq(targets.tripId, Number(id)), eq(targets.userId, currentUser.id))),
         ]);
 
         const foundTrip = tripRows[0] ?? null;
+
         const foundCategory =
           foundTrip?.categoryId != null
-            ? allCategories.find((item) => item.id === foundTrip.categoryId) ?? null
+            ? userCategories.find((item) => item.id === foundTrip.categoryId) ?? null
             : null;
+
+        const filteredActivities = foundTrip
+          ? allActivities.filter((activity) => activity.tripId === foundTrip.id)
+          : [];
 
         if (active) {
           setTrip(foundTrip);
           setCategory(foundCategory);
-          setCategoryRows(allCategories);
-          setActivityRows(allActivities);
-          setTargetRows(allTargets);
+          setCategoryRows(userCategories);
+          setActivityRows(filteredActivities);
+          setTargetRows(userTargets);
           setLoading(false);
         }
       };
@@ -80,7 +89,7 @@ export default function TripDetailScreen() {
       return () => {
         active = false;
       };
-    }, [id])
+    }, [id, currentUser.id])
   );
 
   const deleteTrip = () => {
@@ -92,6 +101,8 @@ export default function TripDetailScreen() {
         text: 'Delete',
         style: 'destructive',
         onPress: async () => {
+          await db.delete(activities).where(eq(activities.tripId, trip.id));
+          await db.delete(targets).where(eq(targets.tripId, trip.id));
           await db.delete(trips).where(eq(trips.id, trip.id));
           router.back();
         },
@@ -111,7 +122,7 @@ export default function TripDetailScreen() {
           const refreshedTargets = await db
             .select()
             .from(targets)
-            .where(eq(targets.tripId, Number(id)));
+            .where(and(eq(targets.tripId, Number(id)), eq(targets.userId, currentUser.id)));
 
           setTargetRows(refreshedTargets);
         },
@@ -142,11 +153,7 @@ export default function TripDetailScreen() {
   const fallbackImage = seededImages[trip.title];
   const hasImage = typeof trip.imageUri === 'string' && trip.imageUri.trim().length > 0;
 
-  const tripActivities = activityRows.filter((activity) => activity.tripId === trip.id);
-
-  const completedActivities = tripActivities.filter(
-    (activity) => activity.status === 'completed'
-  );
+  const completedActivities = activityRows.filter((activity) => activity.status === 'completed');
 
   const progressItems = targetRows.map((target) =>
     calculateTargetProgress({
@@ -176,12 +183,8 @@ export default function TripDetailScreen() {
         <View style={styles.infoBox}>
           <Text style={styles.infoLabel}>Category</Text>
           <View style={styles.categoryRow}>
-            <View
-              style={[styles.categoryDot, { backgroundColor: category?.color ?? '#CBD5E1' }]}
-            />
-            <Text style={styles.infoValue}>
-              {category ? category.name : 'No category assigned'}
-            </Text>
+            <View style={[styles.categoryDot, { backgroundColor: category?.color ?? '#CBD5E1' }]} />
+            <Text style={styles.infoValue}>{category ? category.name : 'No category assigned'}</Text>
           </View>
         </View>
 
@@ -205,150 +208,136 @@ export default function TripDetailScreen() {
         <View style={styles.infoBox}>
           <Text style={styles.infoLabel}>Activity Summary</Text>
           <Text style={styles.infoValue}>
-            {tripActivities.length} activities · {completedActivities.length} completed
+            {activityRows.length} activities · {completedActivities.length} completed
           </Text>
         </View>
 
-        <View style={styles.sectionHeader}>
-          <View>
-            <Text style={styles.sectionTitle}>Activities</Text>
-            <Text style={styles.sectionSubtitle}>
-              Add, open and manage activities for this trip.
-            </Text>
-          </View>
+        <View style={styles.buttonGroup}>
+          <PrimaryButton
+            label="Edit Trip"
+            onPress={() =>
+              router.push({
+                pathname: '/trip/[id]/edit',
+                params: { id: String(trip.id) },
+              })
+            }
+          />
+          <View style={styles.spacer} />
+          <PrimaryButton label="Delete Trip" variant="danger" onPress={deleteTrip} />
         </View>
 
-        <PrimaryButton
-          label="Add Activity"
-          onPress={() =>
-            router.push({
-              pathname: '/trip/[id]/activity/add',
-              params: { id: String(trip.id) },
-            })
-          }
-        />
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Activities</Text>
+          <Text style={styles.sectionSubtitle}>Add, open and manage activities for this trip.</Text>
 
-        <View style={styles.sectionSpacer} />
+          <PrimaryButton
+            label="Add Activity"
+            onPress={() =>
+              router.push({
+                pathname: '/trip/[id]/activity/add',
+                params: { id: String(trip.id) },
+              })
+            }
+          />
 
-        {tripActivities.length === 0 ? (
-          <View style={styles.emptyBox}>
-            <Text style={styles.emptyTitle}>No activities yet</Text>
-            <Text style={styles.emptyText}>
-              Add your first activity for this trip to start tracking records.
-            </Text>
-          </View>
-        ) : (
-          tripActivities.map((activity) => {
-            const activityCategory =
-              categoryRows.find((item) => item.id === activity.categoryId) ?? null;
+          <View style={styles.sectionSpacer} />
 
-            return (
-              <Pressable
-                key={activity.id}
-                accessibilityRole="button"
-                accessibilityLabel={`${activity.title}, open activity details`}
-                onPress={() =>
-                  router.push({
-                    pathname: '/trip/[id]/activity/[activityId]',
-                    params: { id: String(trip.id), activityId: String(activity.id) },
-                  })
-                }
-                style={({ pressed }) => [styles.activityCard, pressed && styles.activityCardPressed]}>
-                <View style={styles.activityTopRow}>
-                  <Text style={styles.activityTitle}>{activity.title}</Text>
-                  <Text style={styles.activityDate}>{activity.activityDate}</Text>
-                </View>
+          {activityRows.length === 0 ? (
+            <View style={styles.emptyBox}>
+              <Text style={styles.emptyTitle}>No activities yet</Text>
+              <Text style={styles.emptyText}>
+                Add your first activity for this trip to start tracking records.
+              </Text>
+            </View>
+          ) : (
+            activityRows.map((activity) => {
+              const activityCategory =
+                categoryRows.find((item) => item.id === activity.categoryId) ?? null;
 
-                <View style={styles.activityMetaRow}>
-                  <View style={styles.activityMetaPill}>
-                    <Text style={styles.activityMetaText}>
+              return (
+                <Pressable
+                  key={activity.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${activity.title}, open activity details`}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/trip/[id]/activity/[activityId]',
+                      params: { id: String(trip.id), activityId: String(activity.id) },
+                    })
+                  }
+                  style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+                >
+                  <View style={styles.rowBetween}>
+                    <Text style={styles.cardTitle}>{activity.title}</Text>
+                    <Text style={styles.cardDate}>{activity.activityDate}</Text>
+                  </View>
+
+                  <View style={styles.metaRow}>
+                    <Text style={styles.metaPill}>
                       {activityCategory ? activityCategory.name : 'Unknown category'}
                     </Text>
+                    <Text style={styles.metaPill}>{activity.metricValue} minutes</Text>
+                    <Text style={styles.metaPill}>{activity.status}</Text>
                   </View>
 
-                  <View style={styles.activityMetaPill}>
-                    <Text style={styles.activityMetaText}>
-                      {activity.metricValue} minutes
-                    </Text>
-                  </View>
-
-                  <View style={styles.activityMetaPill}>
-                    <Text style={styles.activityMetaText}>{activity.status}</Text>
-                  </View>
-                </View>
-
-                <Text style={styles.activityNotes}>
-                  {activity.notes && activity.notes.trim().length > 0
-                    ? activity.notes
-                    : 'No notes added.'}
-                </Text>
-              </Pressable>
-            );
-          })
-        )}
-
-        <View style={styles.sectionHeader}>
-          <View>
-            <Text style={styles.sectionTitle}>Targets</Text>
-            <Text style={styles.sectionSubtitle}>
-              Progress is based on completed activities only.
-            </Text>
-          </View>
+                  <Text style={styles.cardNotes}>
+                    {activity.notes && activity.notes.trim().length > 0
+                      ? activity.notes
+                      : 'No notes added.'}
+                  </Text>
+                </Pressable>
+              );
+            })
+          )}
         </View>
 
-        <PrimaryButton
-          label="Add Target"
-          onPress={() =>
-            router.push({
-              pathname: '/trip/[id]/target/add',
-              params: { id: String(trip.id) },
-            })
-          }
-        />
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Targets</Text>
+          <Text style={styles.sectionSubtitle}>Progress is based on completed activities only.</Text>
 
-        <View style={styles.sectionSpacer} />
+          <PrimaryButton
+            label="Add Target"
+            onPress={() =>
+              router.push({
+                pathname: '/trip/[id]/target/add',
+                params: { id: String(trip.id) },
+              })
+            }
+          />
 
-        {progressItems.length === 0 ? (
-          <View style={styles.emptyBox}>
-            <Text style={styles.emptyTitle}>No targets yet</Text>
-            <Text style={styles.emptyText}>
-              Add a weekly or monthly target for this trip or for a specific activity category.
-            </Text>
-          </View>
-        ) : (
-          progressItems.map((item) => (
-            <TargetProgressCard
-              key={item.target.id}
-              item={item}
-              onEdit={() =>
-                router.push({
-                  pathname: '/trip/[id]/target/[targetId]/edit',
-                  params: {
-                    id: String(trip.id),
-                    targetId: String(item.target.id),
-                  },
-                })
-              }
-              onDelete={() => deleteTarget(item.target)}
-            />
-          ))
-        )}
+          <View style={styles.sectionSpacer} />
 
-        <View style={styles.sectionSpacer} />
-
-        <PrimaryButton
-          label="Edit Trip"
-          onPress={() =>
-            router.push({
-              pathname: '/trip/[id]/edit',
-              params: { id: String(trip.id) },
-            })
-          }
-        />
-
-        <View style={styles.spacer} />
-
-        <PrimaryButton label="Delete Trip" variant="danger" onPress={deleteTrip} />
+          {progressItems.length === 0 ? (
+            <View style={styles.emptyBox}>
+              <Text style={styles.emptyTitle}>No targets yet</Text>
+              <Text style={styles.emptyText}>Add a target to track your trip progress.</Text>
+            </View>
+          ) : (
+            progressItems.map((item) => (
+              <View key={item.target.id} style={styles.targetWrap}>
+                <TargetProgressCard progress={item} />
+                <View style={styles.targetButtons}>
+                  <PrimaryButton
+                    label="Edit"
+                    variant="secondary"
+                    onPress={() =>
+                      router.push({
+                        pathname: '/trip/[id]/target/[targetId]/edit',
+                        params: { id: String(trip.id), targetId: String(item.target.id) },
+                      })
+                    }
+                  />
+                  <View style={styles.smallSpacer} />
+                  <PrimaryButton
+                    label="Delete"
+                    variant="danger"
+                    onPress={() => deleteTarget(item.target)}
+                  />
+                </View>
+              </View>
+            ))
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -365,28 +354,33 @@ const styles = StyleSheet.create({
   },
   centerContent: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
+    alignItems: 'center',
+  },
+  message: {
+    color: '#475569',
+    fontSize: 16,
+    textAlign: 'center',
   },
   image: {
     width: '100%',
     height: 210,
-    borderRadius: 14,
+    borderRadius: 16,
     marginBottom: 16,
   },
   placeholder: {
     width: '100%',
     height: 210,
-    borderRadius: 14,
-    marginBottom: 16,
+    borderRadius: 16,
+    backgroundColor: '#E2E8F0',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#E2E8F0',
+    marginBottom: 16,
   },
   placeholderText: {
     color: '#64748B',
-    fontSize: 14,
+    fontSize: 16,
+    fontWeight: '600',
   },
   title: {
     color: '#0F172A',
@@ -397,21 +391,21 @@ const styles = StyleSheet.create({
     color: '#475569',
     fontSize: 16,
     marginTop: 4,
-    marginBottom: 16,
+    marginBottom: 14,
   },
   infoBox: {
     backgroundColor: '#FFFFFF',
     borderColor: '#CBD5E1',
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 14,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   infoLabel: {
     color: '#475569',
     fontSize: 13,
     fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   infoValue: {
     color: '#0F172A',
@@ -422,100 +416,108 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   categoryDot: {
-    width: 12,
-    height: 12,
+    width: 10,
+    height: 10,
     borderRadius: 999,
     marginRight: 8,
   },
-  sectionHeader: {
+  buttonGroup: {
     marginTop: 8,
-    marginBottom: 10,
+    marginBottom: 18,
+  },
+  spacer: {
+    height: 10,
+  },
+  smallSpacer: {
+    height: 8,
+  },
+  section: {
+    marginTop: 6,
+    marginBottom: 18,
   },
   sectionTitle: {
     color: '#0F172A',
     fontSize: 22,
     fontWeight: '700',
+    marginBottom: 4,
   },
   sectionSubtitle: {
     color: '#64748B',
     fontSize: 14,
-    marginTop: 4,
+    marginBottom: 12,
   },
   sectionSpacer: {
     height: 12,
-  },
-  spacer: {
-    height: 10,
-  },
-  message: {
-    color: '#475569',
-    fontSize: 16,
-    textAlign: 'center',
   },
   emptyBox: {
     backgroundColor: '#FFFFFF',
     borderColor: '#CBD5E1',
     borderWidth: 1,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 14,
+    padding: 14,
   },
   emptyTitle: {
     color: '#0F172A',
     fontSize: 16,
     fontWeight: '700',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   emptyText: {
     color: '#475569',
     fontSize: 14,
-    lineHeight: 20,
   },
-  activityCard: {
+  card: {
     backgroundColor: '#FFFFFF',
     borderColor: '#CBD5E1',
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 14,
-    marginBottom: 12,
-  },
-  activityCardPressed: {
-    opacity: 0.9,
-  },
-  activityTopRow: {
     marginBottom: 10,
   },
-  activityTitle: {
+  cardPressed: {
+    opacity: 0.9,
+  },
+  rowBetween: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  cardTitle: {
     color: '#0F172A',
     fontSize: 16,
     fontWeight: '700',
+    flex: 1,
   },
-  activityDate: {
-    color: '#64748B',
+  cardDate: {
+    color: '#475569',
     fontSize: 13,
-    marginTop: 4,
   },
-  activityMetaRow: {
+  metaRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+    marginTop: 10,
     marginBottom: 10,
   },
-  activityMetaPill: {
+  metaPill: {
+    color: '#0F172A',
+    fontSize: 13,
     backgroundColor: '#F8FAFC',
     borderColor: '#CBD5E1',
     borderWidth: 1,
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 6,
+    overflow: 'hidden',
   },
-  activityMetaText: {
-    color: '#334155',
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  activityNotes: {
+  cardNotes: {
     color: '#475569',
     fontSize: 14,
-    lineHeight: 20,
+  },
+  targetWrap: {
+    marginBottom: 12,
+  },
+  targetButtons: {
+    marginTop: 10,
   },
 });

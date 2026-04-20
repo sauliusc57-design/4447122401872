@@ -1,3 +1,4 @@
+// Reusable labelled text input. Supports single-line and multiline (tall) modes.
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 type Props = {

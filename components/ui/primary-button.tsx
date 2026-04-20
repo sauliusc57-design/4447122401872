@@ -1,3 +1,5 @@
+// Pressable button with three variants: primary (dark filled), secondary (light outlined), and danger (red outlined).
+// Supports a compact mode for smaller inline buttons.
 import { Pressable, StyleSheet, Text } from 'react-native';
 
 type Props = {
