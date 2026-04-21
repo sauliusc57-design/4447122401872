@@ -1,21 +1,48 @@
-// Profile screen. Shows the logged-in user's email with options to log out or permanently delete their account and all associated data.
+// Profile screen. Shows the logged-in user's email with options to toggle dark mode, manage categories, log out, or delete their account.
 import PrimaryButton from '@/components/ui/primary-button';
 import { deleteUserProfile } from '@/db/auth';
 import { useRouter } from 'expo-router';
 import { useContext } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AuthContext } from '../_layout';
+import { AuthContext, ThemeContext } from '../_layout';
+
+const lightColors = {
+  background: '#F8FAFC',
+  title: '#0F172A',
+  subtitle: '#475569',
+  card: '#FFFFFF',
+  border: '#CBD5E1',
+  label: '#475569',
+  value: '#0F172A',
+  menuText: '#0F172A',
+  chevron: '#94A3B8',
+};
+
+const darkColors = {
+  background: '#0F172A',
+  title: '#F1F5F9',
+  subtitle: '#94A3B8',
+  card: '#1E293B',
+  border: '#334155',
+  label: '#94A3B8',
+  value: '#F1F5F9',
+  menuText: '#F1F5F9',
+  chevron: '#64748B',
+};
 
 export default function ProfileScreen() {
   const auth = useContext(AuthContext);
+  const themeCtx = useContext(ThemeContext);
   const router = useRouter();
 
-  if (!auth) return null;
+  const isDark = themeCtx?.isDark ?? false;
+  const c = isDark ? darkColors : lightColors;
+
+  if (!auth || !themeCtx || !auth.currentUser) return null;
 
   const { currentUser, setCurrentUser } = auth;
-
-  if (!currentUser) return null;
+  const { toggleTheme } = themeCtx;
 
   const handleLogout = () => {
     setCurrentUser(null);
@@ -40,25 +67,34 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: c.background }]}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Profile</Text>
-        <Text style={styles.subtitle}>Manage your account for this device.</Text>
+        <Text style={[styles.title, { color: c.title }]}>Profile</Text>
+        <Text style={[styles.subtitle, { color: c.subtitle }]}>Manage your account for this device.</Text>
 
-        <View style={styles.card}>
-          <Text style={styles.label}>Logged in as</Text>
-          <Text style={styles.value}>{currentUser.email}</Text>
+        <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+          <Text style={[styles.label, { color: c.label }]}>Logged in as</Text>
+          <Text style={[styles.value, { color: c.value }]}>{currentUser.email}</Text>
         </View>
 
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Manage categories"
           onPress={() => router.push('/categories' as any)}
-          style={styles.menuRow}
+          style={[styles.menuRow, { backgroundColor: c.card, borderColor: c.border }]}
         >
-          <Text style={styles.menuRowText}>Manage Categories</Text>
-          <Text style={styles.menuRowChevron}>›</Text>
+          <Text style={[styles.menuRowText, { color: c.menuText }]}>Manage Categories</Text>
+          <Text style={[styles.menuRowChevron, { color: c.chevron }]}>›</Text>
         </Pressable>
+
+        <View style={[styles.menuRow, { backgroundColor: c.card, borderColor: c.border }]}>
+          <Text style={[styles.menuRowText, { color: c.menuText }]}>Dark Mode</Text>
+          <Switch
+            value={isDark}
+            onValueChange={toggleTheme}
+            accessibilityLabel="Toggle dark mode"
+          />
+        </View>
 
         <View style={styles.spacer} />
 
@@ -79,7 +115,6 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
   },
   content: {
     padding: 18,
@@ -87,17 +122,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#0F172A',
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 15,
-    color: '#475569',
     marginBottom: 18,
   },
   card: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#CBD5E1',
     borderWidth: 1,
     borderRadius: 12,
     padding: 14,
@@ -106,20 +137,16 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#475569',
     marginBottom: 4,
   },
   value: {
     fontSize: 16,
-    color: '#0F172A',
     fontWeight: '600',
   },
   spacer: {
     height: 10,
   },
   menuRow: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#CBD5E1',
     borderWidth: 1,
     borderRadius: 12,
     paddingHorizontal: 14,
@@ -132,10 +159,8 @@ const styles = StyleSheet.create({
   menuRowText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#0F172A',
   },
   menuRowChevron: {
     fontSize: 20,
-    color: '#94A3B8',
   },
 });

@@ -1,6 +1,8 @@
 // Displays a trip as a pressable card showing its image, title, destination, dates, category, and notes.
 // Tapping the card navigates to the trip detail screen.
+import { ThemeContext } from '@/app/_layout';
 import { useRouter } from 'expo-router';
+import { useContext } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 type Trip = {
@@ -36,8 +38,34 @@ const seededImages: Record<string, any> = {
   'Week in London': require('../assets/images/trips/London.jpg'),
 };
 
+const lightColors = {
+  card: '#FFFFFF',
+  border: '#CBD5E1',
+  title: '#0F172A',
+  meta: '#475569',
+  category: '#334155',
+  notes: '#334155',
+  placeholder: '#E2E8F0',
+  placeholderText: '#64748B',
+};
+
+const darkColors = {
+  card: '#1E293B',
+  border: '#334155',
+  title: '#F1F5F9',
+  meta: '#94A3B8',
+  category: '#CBD5E1',
+  notes: '#CBD5E1',
+  placeholder: '#0F172A',
+  placeholderText: '#64748B',
+};
+
 export default function TripCard({ trip, category }: Props) {
   const router = useRouter();
+  const themeCtx = useContext(ThemeContext);
+
+  const isDark = themeCtx?.isDark ?? false;
+  const c = isDark ? darkColors : lightColors;
 
   const fallbackImage = seededImages[trip.title];
   const hasValidLocalImage =
@@ -53,7 +81,7 @@ export default function TripCard({ trip, category }: Props) {
           params: { id: String(trip.id) },
         })
       }
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.card, { backgroundColor: c.card, borderColor: c.border }, pressed && styles.pressed]}
     >
       {hasValidLocalImage ? (
         <Image
@@ -64,14 +92,14 @@ export default function TripCard({ trip, category }: Props) {
       ) : fallbackImage ? (
         <Image source={fallbackImage} style={styles.image} resizeMode="cover" />
       ) : (
-        <View style={styles.placeholder}>
-          <Text style={styles.placeholderText}>No Image</Text>
+        <View style={[styles.placeholder, { backgroundColor: c.placeholder }]}>
+          <Text style={[styles.placeholderText, { color: c.placeholderText }]}>No Image</Text>
         </View>
       )}
 
-      <Text style={styles.title}>{trip.title}</Text>
-      <Text style={styles.meta}>{trip.destination}</Text>
-      <Text style={styles.meta}>
+      <Text style={[styles.title, { color: c.title }]}>{trip.title}</Text>
+      <Text style={[styles.meta, { color: c.meta }]}>{trip.destination}</Text>
+      <Text style={[styles.meta, { color: c.meta }]}>
         {trip.startDate} → {trip.endDate}
       </Text>
 
@@ -82,20 +110,18 @@ export default function TripCard({ trip, category }: Props) {
             { backgroundColor: category?.color ?? '#CBD5E1' },
           ]}
         />
-        <Text style={styles.categoryText}>
+        <Text style={[styles.categoryText, { color: c.category }]}>
           {category ? category.name : 'No category assigned'}
         </Text>
       </View>
 
-      {trip.notes ? <Text style={styles.notes}>{trip.notes}</Text> : null}
+      {trip.notes ? <Text style={[styles.notes, { color: c.notes }]}>{trip.notes}</Text> : null}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#CBD5E1',
     borderRadius: 12,
     borderWidth: 1,
     marginBottom: 12,
@@ -117,20 +143,16 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#E2E8F0',
   },
   placeholderText: {
-    color: '#64748B',
     fontSize: 14,
   },
   title: {
-    color: '#0F172A',
     fontSize: 18,
     fontWeight: '700',
     marginBottom: 4,
   },
   meta: {
-    color: '#475569',
     fontSize: 14,
     marginBottom: 2,
   },
@@ -146,12 +168,10 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   categoryText: {
-    color: '#334155',
     fontSize: 14,
     fontWeight: '500',
   },
   notes: {
-    color: '#334155',
     fontSize: 14,
     marginTop: 8,
   },

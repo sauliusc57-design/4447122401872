@@ -7,7 +7,7 @@ import { useCallback, useContext, useMemo, useState } from 'react';
 import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { BarChart, LineChart, PieChart } from 'react-native-chart-kit';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AuthContext } from '../_layout';
+import { AuthContext, ThemeContext } from '../_layout';
 
 type Activity = typeof activities.$inferSelect;
 type Category = typeof categories.$inferSelect;
@@ -16,6 +16,40 @@ type Period = 'daily' | 'weekly' | 'monthly';
 
 const screenWidth = Dimensions.get('window').width;
 const chartWidth = screenWidth - 36;
+
+const lightColors = {
+  background: '#F8FAFC',
+  title: '#0F172A',
+  subtitle: '#475569',
+  card: '#FFFFFF',
+  border: '#CBD5E1',
+  label: '#475569',
+  value: '#0F172A',
+  sectionSubtitle: '#64748B',
+  message: '#475569',
+  legendFont: '#334155',
+  chartLine: 'rgba(15, 23, 42,',
+  chartLabel: 'rgba(71, 85, 105,',
+  chartDot: '#0F172A',
+  pieEmpty: '#CBD5E1',
+};
+
+const darkColors = {
+  background: '#0F172A',
+  title: '#F1F5F9',
+  subtitle: '#94A3B8',
+  card: '#1E293B',
+  border: '#334155',
+  label: '#94A3B8',
+  value: '#F1F5F9',
+  sectionSubtitle: '#94A3B8',
+  message: '#94A3B8',
+  legendFont: '#CBD5E1',
+  chartLine: 'rgba(241, 245, 249,',
+  chartLabel: 'rgba(148, 163, 184,',
+  chartDot: '#F1F5F9',
+  pieEmpty: '#334155',
+};
 
 function getWeekKey(dateString: string) {
   const date = new Date(`${dateString}T00:00:00`);
@@ -39,6 +73,10 @@ function formatPeriodLabel(key: string, period: Period) {
 
 export default function InsightsScreen() {
   const auth = useContext(AuthContext);
+  const themeCtx = useContext(ThemeContext);
+
+  const isDark = themeCtx?.isDark ?? false;
+  const c = isDark ? darkColors : lightColors;
 
   const [activityRows, setActivityRows] = useState<Activity[]>([]);
   const [categoryRows, setCategoryRows] = useState<Category[]>([]);
@@ -118,12 +156,12 @@ export default function InsightsScreen() {
           name: category?.name ?? 'Unknown',
           count,
           color: category?.color ?? ['#0F172A', '#334155', '#64748B', '#94A3B8'][index % 4],
-          legendFontColor: '#334155',
+          legendFontColor: c.legendFont,
           legendFontSize: 13,
         };
       })
       .filter((item) => item.count > 0);
-  }, [activityRows, categoryRows]);
+  }, [activityRows, categoryRows, isDark]);
 
   const minutesByCategory = useMemo(() => {
     const grouped = activityRows.reduce<Record<number, number>>((acc, activity) => {
@@ -161,38 +199,38 @@ export default function InsightsScreen() {
   );
 
   const chartConfig = {
-    backgroundGradientFrom: '#FFFFFF',
-    backgroundGradientTo: '#FFFFFF',
-    color: (opacity = 1) => `rgba(15, 23, 42, ${opacity})`,
-    labelColor: (opacity = 1) => `rgba(71, 85, 105, ${opacity})`,
+    backgroundGradientFrom: c.card,
+    backgroundGradientTo: c.card,
+    color: (opacity = 1) => `${c.chartLine} ${opacity})`,
+    labelColor: (opacity = 1) => `${c.chartLabel} ${opacity})`,
     decimalPlaces: 0,
     propsForDots: {
       r: '5',
       strokeWidth: '2',
-      stroke: '#0F172A',
+      stroke: c.chartDot,
     },
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: c.background }]}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Insights</Text>
-        <Text style={styles.subtitle}>Daily, weekly and monthly activity summaries</Text>
+        <Text style={[styles.title, { color: c.title }]}>Insights</Text>
+        <Text style={[styles.subtitle, { color: c.subtitle }]}>Daily, weekly and monthly activity summaries</Text>
 
         <View style={styles.summaryGrid}>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Total activities</Text>
-            <Text style={styles.summaryValue}>{totalActivities}</Text>
+          <View style={[styles.summaryCard, { backgroundColor: c.card, borderColor: c.border }]}>
+            <Text style={[styles.summaryLabel, { color: c.label }]}>Total activities</Text>
+            <Text style={[styles.summaryValue, { color: c.value }]}>{totalActivities}</Text>
           </View>
 
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Total minutes</Text>
-            <Text style={styles.summaryValue}>{totalMinutes}</Text>
+          <View style={[styles.summaryCard, { backgroundColor: c.card, borderColor: c.border }]}>
+            <Text style={[styles.summaryLabel, { color: c.label }]}>Total minutes</Text>
+            <Text style={[styles.summaryValue, { color: c.value }]}>{totalMinutes}</Text>
           </View>
 
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Top category</Text>
-            <Text style={styles.summaryValueSmall}>{topCategory.name}</Text>
+          <View style={[styles.summaryCard, { backgroundColor: c.card, borderColor: c.border }]}>
+            <Text style={[styles.summaryLabel, { color: c.label }]}>Top category</Text>
+            <Text style={[styles.summaryValueSmall, { color: c.value }]}>{topCategory.name}</Text>
           </View>
         </View>
 
@@ -215,14 +253,14 @@ export default function InsightsScreen() {
         </View>
 
         {loading ? (
-          <Text style={styles.message}>Loading insights...</Text>
+          <Text style={[styles.message, { color: c.message }]}>Loading insights...</Text>
         ) : activityRows.length === 0 ? (
-          <Text style={styles.message}>No activity data available yet.</Text>
+          <Text style={[styles.message, { color: c.message }]}>No activity data available yet.</Text>
         ) : (
           <>
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Activities over time</Text>
-              <Text style={styles.sectionSubtitle}>Number of activities in the selected period</Text>
+            <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
+              <Text style={[styles.sectionTitle, { color: c.title }]}>Activities over time</Text>
+              <Text style={[styles.sectionSubtitle, { color: c.sectionSubtitle }]}>Number of activities in the selected period</Text>
 
               <LineChart
                 data={{
@@ -238,9 +276,9 @@ export default function InsightsScreen() {
               />
             </View>
 
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Activities by category</Text>
-              <Text style={styles.sectionSubtitle}>Distribution of all saved activities</Text>
+            <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
+              <Text style={[styles.sectionTitle, { color: c.title }]}>Activities by category</Text>
+              <Text style={[styles.sectionSubtitle, { color: c.sectionSubtitle }]}>Distribution of all saved activities</Text>
 
               <PieChart
                 data={
@@ -256,8 +294,8 @@ export default function InsightsScreen() {
                         {
                           name: 'No data',
                           count: 1,
-                          color: '#CBD5E1',
-                          legendFontColor: '#334155',
+                          color: c.pieEmpty,
+                          legendFontColor: c.legendFont,
                           legendFontSize: 13,
                         },
                       ]
@@ -273,9 +311,9 @@ export default function InsightsScreen() {
               />
             </View>
 
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Minutes by category</Text>
-              <Text style={styles.sectionSubtitle}>Total time spent by category</Text>
+            <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
+              <Text style={[styles.sectionTitle, { color: c.title }]}>Minutes by category</Text>
+              <Text style={[styles.sectionSubtitle, { color: c.sectionSubtitle }]}>Total time spent by category</Text>
 
               <BarChart
                 data={{
@@ -301,20 +339,17 @@ export default function InsightsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
   },
   content: {
     padding: 18,
     paddingBottom: 28,
   },
   title: {
-    color: '#0F172A',
     fontSize: 28,
     fontWeight: '700',
     marginBottom: 4,
   },
   subtitle: {
-    color: '#475569',
     fontSize: 15,
     marginBottom: 16,
   },
@@ -323,25 +358,20 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   summaryCard: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#CBD5E1',
     borderRadius: 14,
     borderWidth: 1,
     padding: 14,
   },
   summaryLabel: {
-    color: '#475569',
     fontSize: 13,
     fontWeight: '600',
     marginBottom: 6,
   },
   summaryValue: {
-    color: '#0F172A',
     fontSize: 28,
     fontWeight: '700',
   },
   summaryValueSmall: {
-    color: '#0F172A',
     fontSize: 20,
     fontWeight: '700',
   },
@@ -350,21 +380,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   section: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#CBD5E1',
     borderRadius: 14,
     borderWidth: 1,
     marginBottom: 16,
     paddingVertical: 14,
   },
   sectionTitle: {
-    color: '#0F172A',
     fontSize: 18,
     fontWeight: '700',
     paddingHorizontal: 14,
   },
   sectionSubtitle: {
-    color: '#64748B',
     fontSize: 13,
     paddingHorizontal: 14,
     marginTop: 4,
@@ -375,7 +401,6 @@ const styles = StyleSheet.create({
     marginLeft: -6,
   },
   message: {
-    color: '#475569',
     fontSize: 16,
     paddingTop: 16,
     textAlign: 'center',

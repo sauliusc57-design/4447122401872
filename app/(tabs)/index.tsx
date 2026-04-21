@@ -21,12 +21,54 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AuthContext } from '../_layout';
+import { AuthContext, ThemeContext } from '../_layout';
 
 type Trip = typeof trips.$inferSelect;
 type Category = typeof categories.$inferSelect;
 
 const ALL_CATEGORIES = 'all';
+
+const lightColors = {
+  background: '#F8FAFC',
+  title: '#0F172A',
+  subtitle: '#475569',
+  text: '#0F172A',
+  card: '#FFFFFF',
+  border: '#CBD5E1',
+  placeholder: '#94A3B8',
+  icon: '#64748B',
+  chipBg: '#F8FAFC',
+  chipBorder: '#94A3B8',
+  chipText: '#0F172A',
+  chipSelectedBg: '#0F172A',
+  chipSelectedText: '#FFFFFF',
+  dateLabel: '#334155',
+  message: '#475569',
+  clearText: '#0F766E',
+  iosDoneText: '#0F172A',
+  iosDoneBorder: '#E2E8F0',
+};
+
+const darkColors = {
+  background: '#0F172A',
+  title: '#F1F5F9',
+  subtitle: '#94A3B8',
+  text: '#F1F5F9',
+  card: '#1E293B',
+  border: '#334155',
+  placeholder: '#64748B',
+  icon: '#94A3B8',
+  chipBg: '#1E293B',
+  chipBorder: '#475569',
+  chipText: '#F1F5F9',
+  chipSelectedBg: '#F1F5F9',
+  chipSelectedText: '#0F172A',
+  dateLabel: '#CBD5E1',
+  message: '#94A3B8',
+  clearText: '#2DD4BF',
+  iosDoneText: '#F1F5F9',
+  iosDoneBorder: '#334155',
+};
 
 function toDateString(d: Date): string {
   const y = d.getFullYear();
@@ -42,7 +84,11 @@ function formatDisplay(d: Date): string {
 export default function IndexScreen() {
   const router = useRouter();
   const auth = useContext(AuthContext);
+  const themeCtx = useContext(ThemeContext);
   const currentUser = auth?.currentUser ?? null;
+
+  const isDark = themeCtx?.isDark ?? false;
+  const c = isDark ? darkColors : lightColors;
 
   const [tripRows, setTripRows] = useState<Trip[]>([]);
   const [categoryRows, setCategoryRows] = useState<Category[]>([]);
@@ -133,9 +179,9 @@ export default function IndexScreen() {
     filterDate !== null;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <Text style={styles.title}>My Trips</Text>
-      <Text style={styles.subtitle}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: c.background }]}>
+      <Text style={[styles.title, { color: c.title }]}>My Trips</Text>
+      <Text style={[styles.subtitle, { color: c.subtitle }]}>
         {loading ? 'Loading trips...' : `${filteredTrips.length} of ${tripRows.length} trips shown`}
       </Text>
 
@@ -149,8 +195,8 @@ export default function IndexScreen() {
             autoCorrect={false}
             onChangeText={setSearchQuery}
             placeholder="Search by title, destination, or notes"
-            placeholderTextColor="#94A3B8"
-            style={styles.searchInput}
+            placeholderTextColor={c.placeholder}
+            style={[styles.searchInput, { backgroundColor: c.card, borderColor: c.border, color: c.text }]}
             value={searchQuery}
           />
 
@@ -161,13 +207,15 @@ export default function IndexScreen() {
               onPress={() => setSelectedCategoryId(ALL_CATEGORIES)}
               style={[
                 styles.filterChip,
-                selectedCategoryId === ALL_CATEGORIES && styles.filterChipSelected,
+                { backgroundColor: c.chipBg, borderColor: c.chipBorder },
+                selectedCategoryId === ALL_CATEGORIES && { backgroundColor: c.chipSelectedBg, borderColor: c.chipSelectedBg },
               ]}
             >
               <Text
                 style={[
                   styles.filterChipText,
-                  selectedCategoryId === ALL_CATEGORIES && styles.filterChipTextSelected,
+                  { color: c.chipText },
+                  selectedCategoryId === ALL_CATEGORIES && { color: c.chipSelectedText },
                 ]}
               >
                 All
@@ -182,11 +230,19 @@ export default function IndexScreen() {
                   accessibilityLabel={`Filter by ${category.name}`}
                   accessibilityRole="button"
                   onPress={() => setSelectedCategoryId(String(category.id))}
-                  style={[styles.filterChip, isSelected && styles.filterChipSelected]}
+                  style={[
+                    styles.filterChip,
+                    { backgroundColor: c.chipBg, borderColor: c.chipBorder },
+                    isSelected && { backgroundColor: c.chipSelectedBg, borderColor: c.chipSelectedBg },
+                  ]}
                 >
                   <View style={[styles.filterDot, { backgroundColor: category.color }]} />
                   <Text
-                    style={[styles.filterChipText, isSelected && styles.filterChipTextSelected]}
+                    style={[
+                      styles.filterChipText,
+                      { color: c.chipText },
+                      isSelected && { color: c.chipSelectedText },
+                    ]}
                     numberOfLines={1}
                   >
                     {category.name}
@@ -197,15 +253,15 @@ export default function IndexScreen() {
           </View>
 
           <View style={styles.dateRow}>
-            <Text style={styles.dateLabel}>Date</Text>
+            <Text style={[styles.dateLabel, { color: c.dateLabel }]}>Date</Text>
             <Pressable
               accessibilityLabel="Filter trips by date"
               accessibilityRole="button"
               onPress={openDatePicker}
-              style={styles.datePicker}
+              style={[styles.datePicker, { backgroundColor: c.card, borderColor: c.border }]}
             >
-              <Ionicons name="calendar-outline" size={16} color="#64748B" style={styles.calendarIcon} />
-              <Text style={[styles.datePickerText, !filterDate && styles.datePickerPlaceholder]}>
+              <Ionicons name="calendar-outline" size={16} color={c.icon} style={styles.calendarIcon} />
+              <Text style={[styles.datePickerText, { color: filterDate ? c.text : c.placeholder }]}>
                 {filterDate ? formatDisplay(filterDate) : 'Select a date'}
               </Text>
               {filterDate && (
@@ -214,7 +270,7 @@ export default function IndexScreen() {
                   onPress={() => setFilterDate(null)}
                   hitSlop={8}
                 >
-                  <Ionicons name="close-circle" size={18} color="#94A3B8" />
+                  <Ionicons name="close-circle" size={18} color={c.placeholder} />
                 </Pressable>
               )}
             </Pressable>
@@ -227,7 +283,7 @@ export default function IndexScreen() {
                 accessibilityRole="button"
                 onPress={clearFilters}
               >
-                <Text style={styles.clearText}>Clear filters</Text>
+                <Text style={[styles.clearText, { color: c.clearText }]}>Clear filters</Text>
               </Pressable>
             </View>
           )}
@@ -235,11 +291,11 @@ export default function IndexScreen() {
       ) : null}
 
       {loading ? (
-        <Text style={styles.message}>Loading trips...</Text>
+        <Text style={[styles.message, { color: c.message }]}>Loading trips...</Text>
       ) : tripRows.length === 0 ? (
-        <Text style={styles.message}>No trips added yet.</Text>
+        <Text style={[styles.message, { color: c.message }]}>No trips added yet.</Text>
       ) : filteredTrips.length === 0 ? (
-        <Text style={styles.message}>No trips match your filters.</Text>
+        <Text style={[styles.message, { color: c.message }]}>No trips match your filters.</Text>
       ) : (
         <ScrollView contentContainerStyle={styles.listContent}>
           {filteredTrips.map((trip) => {
@@ -255,12 +311,12 @@ export default function IndexScreen() {
       {Platform.OS === 'ios' && (
         <Modal visible={iosPickerVisible} transparent animationType="slide">
           <View style={styles.iosOverlay}>
-            <View style={styles.iosSheet}>
+            <View style={[styles.iosSheet, { backgroundColor: c.card }]}>
               <Pressable
                 onPress={() => setIosPickerVisible(false)}
-                style={styles.iosDoneRow}
+                style={[styles.iosDoneRow, { borderBottomColor: c.iosDoneBorder }]}
               >
-                <Text style={styles.iosDoneText}>Done</Text>
+                <Text style={[styles.iosDoneText, { color: c.iosDoneText }]}>Done</Text>
               </Pressable>
               <DateTimePicker
                 value={filterDate ?? new Date()}
@@ -280,28 +336,22 @@ export default function IndexScreen() {
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: '#F8FAFC',
     flex: 1,
     paddingHorizontal: 18,
     paddingTop: 10,
   },
   title: {
-    color: '#0F172A',
     fontSize: 28,
     fontWeight: '700',
   },
   subtitle: {
-    color: '#475569',
     fontSize: 15,
     marginTop: 4,
     marginBottom: 14,
   },
   searchInput: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#CBD5E1',
     borderRadius: 12,
     borderWidth: 1,
-    color: '#0F172A',
     fontSize: 15,
     marginTop: 14,
     paddingHorizontal: 12,
@@ -316,8 +366,6 @@ const styles = StyleSheet.create({
   filterChip: {
     alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: '#F8FAFC',
-    borderColor: '#94A3B8',
     borderRadius: 999,
     borderWidth: 1,
     flexDirection: 'row',
@@ -326,17 +374,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 9,
   },
-  filterChipSelected: {
-    backgroundColor: '#0F172A',
-    borderColor: '#0F172A',
-  },
   filterChipText: {
-    color: '#0F172A',
     fontSize: 14,
     fontWeight: '600',
-  },
-  filterChipTextSelected: {
-    color: '#FFFFFF',
   },
   filterDot: {
     borderRadius: 999,
@@ -349,7 +389,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   dateLabel: {
-    color: '#334155',
     fontSize: 13,
     fontWeight: '600',
     marginBottom: 6,
@@ -357,8 +396,6 @@ const styles = StyleSheet.create({
   datePicker: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderColor: '#CBD5E1',
     borderRadius: 12,
     borderWidth: 1,
     paddingHorizontal: 12,
@@ -369,11 +406,7 @@ const styles = StyleSheet.create({
   },
   datePickerText: {
     flex: 1,
-    color: '#0F172A',
     fontSize: 15,
-  },
-  datePickerPlaceholder: {
-    color: '#94A3B8',
   },
   helperRow: {
     alignItems: 'flex-end',
@@ -381,7 +414,6 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   clearText: {
-    color: '#0F766E',
     fontSize: 13,
     fontWeight: '700',
   },
@@ -390,7 +422,6 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   message: {
-    color: '#475569',
     fontSize: 16,
     paddingTop: 16,
     textAlign: 'center',
@@ -401,7 +432,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   iosSheet: {
-    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     paddingBottom: 32,
@@ -410,11 +440,9 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     paddingHorizontal: 20,
     paddingVertical: 14,
-    borderBottomColor: '#E2E8F0',
     borderBottomWidth: 1,
   },
   iosDoneText: {
-    color: '#0F172A',
     fontSize: 16,
     fontWeight: '600',
   },
