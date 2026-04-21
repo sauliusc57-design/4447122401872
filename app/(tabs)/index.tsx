@@ -128,10 +128,13 @@ export default function IndexScreen() {
     }, [currentUser])
   );
 
+  const today = new Date().toISOString().split('T')[0];
   const normalizedQuery = searchQuery.trim().toLowerCase();
 
   const filteredTrips = useMemo(() => {
     return tripRows.filter((trip) => {
+      const isCurrent = trip.endDate >= today;
+
       const matchesSearch =
         normalizedQuery.length === 0 ||
         trip.title.toLowerCase().includes(normalizedQuery) ||
@@ -146,7 +149,7 @@ export default function IndexScreen() {
         filterDate === null ||
         (trip.startDate <= toDateString(filterDate) && trip.endDate >= toDateString(filterDate));
 
-      return matchesSearch && matchesCategory && matchesDate;
+      return isCurrent && matchesSearch && matchesCategory && matchesDate;
     });
   }, [tripRows, normalizedQuery, selectedCategoryId, filterDate]);
 
@@ -182,7 +185,7 @@ export default function IndexScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: c.background }]}>
       <Text style={[styles.title, { color: c.title }]}>My Trips</Text>
       <Text style={[styles.subtitle, { color: c.subtitle }]}>
-        {loading ? 'Loading trips...' : `${filteredTrips.length} of ${tripRows.length} trips shown`}
+        {loading ? 'Loading trips...' : `${filteredTrips.length} of ${tripRows.filter(t => t.endDate >= today).length} trips shown`}
       </Text>
 
       <PrimaryButton label="Add Trip" onPress={() => router.push('/trip/add')} />
@@ -292,8 +295,8 @@ export default function IndexScreen() {
 
       {loading ? (
         <Text style={[styles.message, { color: c.message }]}>Loading trips...</Text>
-      ) : tripRows.length === 0 ? (
-        <Text style={[styles.message, { color: c.message }]}>No trips added yet.</Text>
+      ) : tripRows.filter(t => t.endDate >= today).length === 0 ? (
+        <Text style={[styles.message, { color: c.message }]}>No upcoming trips. Check Memories for past trips.</Text>
       ) : filteredTrips.length === 0 ? (
         <Text style={[styles.message, { color: c.message }]}>No trips match your filters.</Text>
       ) : (

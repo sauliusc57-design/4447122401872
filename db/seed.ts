@@ -1,9 +1,8 @@
-// Seeds the database with a demo user, categories, trips, activities, and targets on first run.
-// Safe to call on every app start — exits early if any trips already exist.
-import { eq } from 'drizzle-orm';
+// Seeds the database with a sample data
+import { and, eq } from 'drizzle-orm';
 import { hashPassword } from './auth';
 import { db } from './client';
-import { activities, categories, targets, trips, users } from './schema';
+import { activities, categories, targets, tripPhotos, trips, users } from './schema';
 
 export async function seedHolidayPlannerIfEmpty() {
   const now = new Date().toISOString();
@@ -337,5 +336,84 @@ export async function seedHolidayPlannerIfEmpty() {
       targetValue: 3,
       createdAt: now,
     },
+  ]);
+}
+
+export async function seedPastTripsAndPhotosIfEmpty() {
+  const now = new Date().toISOString();
+  const demoEmail = 'demo@planner.com';
+
+  const demoUser = (await db.select().from(users).where(eq(users.email, demoEmail)))[0];
+  if (!demoUser) return;
+
+  const existingPastTrip = await db
+    .select()
+    .from(trips)
+    .where(and(eq(trips.userId, demoUser.id), eq(trips.title, 'Spring in Paris')));
+  if (existingPastTrip.length > 0) return;
+
+  const userCategories = await db
+    .select()
+    .from(categories)
+    .where(eq(categories.userId, demoUser.id));
+
+  const cityBreak = userCategories.find((c) => c.name === 'City Break');
+  const foodTrip = userCategories.find((c) => c.name === 'Food Trip');
+
+  if (!cityBreak || !foodTrip) return;
+
+  await db.insert(trips).values([
+    {
+      userId: demoUser.id,
+      categoryId: cityBreak.id,
+      title: 'Spring in Paris',
+      destination: 'Paris, France',
+      startDate: '2025-04-15',
+      endDate: '2025-04-20',
+      notes: 'Spring break exploring Montmartre, the Seine and classic Parisian cafés.',
+      imageUri: null,
+      createdAt: now,
+    },
+    {
+      userId: demoUser.id,
+      categoryId: cityBreak.id,
+      title: 'London City Break',
+      destination: 'London, England',
+      startDate: '2025-04-21',
+      endDate: '2025-04-27',
+      notes: 'A week of galleries, markets and walking the South Bank.',
+      imageUri: null,
+      createdAt: now,
+    },
+    {
+      userId: demoUser.id,
+      categoryId: foodTrip.id,
+      title: 'Roman Holiday',
+      destination: 'Rome, Italy',
+      startDate: '2025-02-10',
+      endDate: '2025-02-17',
+      notes: 'Off-season Rome — quiet streets, great food and no queues at the Vatican.',
+      imageUri: null,
+      createdAt: now,
+    },
+  ]);
+
+  const allUserTrips = await db.select().from(trips).where(eq(trips.userId, demoUser.id));
+  const parisTrip = allUserTrips.find((t) => t.title === 'Spring in Paris');
+  const londonTrip = allUserTrips.find((t) => t.title === 'London City Break');
+  const romeTrip = allUserTrips.find((t) => t.title === 'Roman Holiday');
+
+  if (!parisTrip || !londonTrip || !romeTrip) return;
+
+  await db.insert(tripPhotos).values([
+    { tripId: parisTrip.id, uri: 'seeded:Paris', caption: 'Seine riverbanks at golden hour', createdAt: now },
+    { tripId: parisTrip.id, uri: 'seeded:Paris', caption: 'Morning at Sacré-Cœur', createdAt: now },
+    { tripId: parisTrip.id, uri: 'seeded:Paris', caption: 'Café on Rue de Rivoli', createdAt: now },
+    { tripId: londonTrip.id, uri: 'seeded:London', caption: 'Tower Bridge at sunrise', createdAt: now },
+    { tripId: londonTrip.id, uri: 'seeded:London', caption: 'Borough Market lunch', createdAt: now },
+    { tripId: londonTrip.id, uri: 'seeded:London', caption: 'South Bank walk', createdAt: now },
+    { tripId: romeTrip.id, uri: 'seeded:Rome', caption: 'Colosseum in winter light', createdAt: now },
+    { tripId: romeTrip.id, uri: 'seeded:Rome', caption: 'Trastevere evening', createdAt: now },
+    { tripId: romeTrip.id, uri: 'seeded:Rome', caption: 'Pasta at a local trattoria', createdAt: now },
   ]);
 }

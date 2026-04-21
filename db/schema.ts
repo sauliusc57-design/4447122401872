@@ -53,3 +53,11 @@ export const targets = sqliteTable('targets', {
   targetValue: integer('target_value').notNull(),
   createdAt: text('created_at').notNull(),
 });
+
+export const tripPhotos = sqliteTable('trip_photos', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  tripId: integer('trip_id').notNull(),
+  uri: text('uri').notNull(),
+  caption: text('caption'),
+  createdAt: text('created_at').notNull(),
+});

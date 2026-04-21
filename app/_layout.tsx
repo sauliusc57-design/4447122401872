@@ -9,7 +9,7 @@ import { ActivityIndicator, View } from 'react-native';
 import 'react-native-reanimated';
 
 import type { User } from '@/db/auth';
-import { seedHolidayPlannerIfEmpty } from '@/db/seed';
+import { seedHolidayPlannerIfEmpty, seedPastTripsAndPhotosIfEmpty } from '@/db/seed';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 type AuthContextValue = {
@@ -95,10 +95,9 @@ export default function RootLayout() {
 
   useEffect(() => {
     const prepareApp = async () => {
-      const [, savedTheme] = await Promise.all([
-        seedHolidayPlannerIfEmpty(),
-        loadThemePreference(),
-      ]);
+      await seedHolidayPlannerIfEmpty();
+      await seedPastTripsAndPhotosIfEmpty();
+      const savedTheme = await loadThemePreference();
       if (savedTheme !== null) setThemeOverride(savedTheme);
       setAppReady(true);
     };
