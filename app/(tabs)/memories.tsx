@@ -75,43 +75,43 @@ function formatDateRange(start: string, end: string): string {
 }
 
 const lightColors = {
-  background: '#F8FAFC',
-  title: '#0F172A',
-  subtitle: '#475569',
-  sectionTitle: '#0F172A',
-  sectionSubtitle: '#64748B',
-  card: '#FFFFFF',
-  border: '#CBD5E1',
-  cardTitle: '#0F172A',
-  cardMeta: '#475569',
-  placeholderBg: '#E2E8F0',
-  placeholderText: '#64748B',
-  yearLabel: '#64748B',
-  emptyTitle: '#0F172A',
-  emptyText: '#475569',
-  memoryBadgeBg: '#EFF6FF',
-  memoryBadgeText: '#1D4ED8',
-  categoryDot: '#CBD5E1',
+  background: '#FDF6EE',
+  title: '#2C1F0E',
+  subtitle: '#5C4A2E',
+  sectionTitle: '#2C1F0E',
+  sectionSubtitle: '#9C886C',
+  card: '#FFFAF4',
+  border: '#E8D5B7',
+  cardTitle: '#2C1F0E',
+  cardMeta: '#5C4A2E',
+  placeholderBg: '#E8D5B7',
+  placeholderText: '#9C886C',
+  yearLabel: '#9C886C',
+  emptyTitle: '#2C1F0E',
+  emptyText: '#5C4A2E',
+  memoryBadgeBg: '#FFF3E8',
+  memoryBadgeText: '#E8873A',
+  categoryDot: '#E8D5B7',
 };
 
 const darkColors = {
-  background: '#0F172A',
-  title: '#F1F5F9',
-  subtitle: '#94A3B8',
-  sectionTitle: '#F1F5F9',
-  sectionSubtitle: '#94A3B8',
-  card: '#1E293B',
-  border: '#334155',
-  cardTitle: '#F1F5F9',
-  cardMeta: '#94A3B8',
-  placeholderBg: '#1E293B',
-  placeholderText: '#64748B',
-  yearLabel: '#64748B',
-  emptyTitle: '#F1F5F9',
-  emptyText: '#94A3B8',
-  memoryBadgeBg: '#1E3A5F',
-  memoryBadgeText: '#93C5FD',
-  categoryDot: '#334155',
+  background: '#1C1612',
+  title: '#F5ECD8',
+  subtitle: '#D4C4A8',
+  sectionTitle: '#F5ECD8',
+  sectionSubtitle: '#D4C4A8',
+  card: '#251E14',
+  border: '#3D3020',
+  cardTitle: '#F5ECD8',
+  cardMeta: '#D4C4A8',
+  placeholderBg: '#251E14',
+  placeholderText: '#9C886C',
+  yearLabel: '#9C886C',
+  emptyTitle: '#F5ECD8',
+  emptyText: '#D4C4A8',
+  memoryBadgeBg: '#3D2810',
+  memoryBadgeText: '#E8873A',
+  categoryDot: '#3D3020',
 };
 
 export default function MemoriesScreen() {
@@ -199,7 +199,7 @@ export default function MemoriesScreen() {
         {!loading && memoryTrips.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="sparkles" size={16} color={isDark ? '#93C5FD' : '#1D4ED8'} style={styles.sectionIcon} />
+              <Ionicons name="sparkles" size={16} color={isDark ? '#7ECDC0' : '#E8873A'} style={styles.sectionIcon} />
               <Text style={[styles.sectionTitle, { color: c.sectionTitle }]}>This time last year</Text>
             </View>
             <Text style={[styles.sectionSubtitle, { color: c.sectionSubtitle }]}>

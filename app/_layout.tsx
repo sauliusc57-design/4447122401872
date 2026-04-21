@@ -136,7 +136,7 @@ export default function RootLayout() {
               flex: 1,
               justifyContent: 'center',
               alignItems: 'center',
-              backgroundColor: isDark ? '#0F172A' : '#F8FAFC',
+              backgroundColor: isDark ? '#1C1612' : '#FDF6EE',
             }}
           >
             <ActivityIndicator size="large" />

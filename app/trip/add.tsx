@@ -211,7 +211,7 @@ export default function AddTripScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FDF6EE',
   },
   content: {
     padding: 18,
@@ -219,12 +219,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#2C1F0E',
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 15,
-    color: '#475569',
+    color: '#5C4A2E',
     marginBottom: 18,
   },
   previewImage: {
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   helperText: {
-    color: '#64748B',
+    color: '#9C886C',
     marginTop: 10,
     marginBottom: 14,
   },

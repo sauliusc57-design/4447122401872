@@ -202,24 +202,24 @@ export default function EditActivityScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FDF6EE',
   },
   content: {
     padding: 18,
   },
   title: {
-    color: '#0F172A',
+    color: '#2C1F0E',
     fontSize: 28,
     fontWeight: '700',
     marginBottom: 4,
   },
   subtitle: {
-    color: '#475569',
+    color: '#5C4A2E',
     fontSize: 15,
     marginBottom: 18,
   },
   label: {
-    color: '#334155',
+    color: '#5C4A2E',
     fontSize: 13,
     fontWeight: '600',
     marginBottom: 6,
@@ -232,19 +232,19 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   chip: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#94A3B8',
+    backgroundColor: '#FFFAF4',
+    borderColor: '#E8D5B7',
     borderWidth: 1,
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
   chipSelected: {
-    backgroundColor: '#0F172A',
-    borderColor: '#0F172A',
+    backgroundColor: '#E8873A',
+    borderColor: '#E8873A',
   },
   chipText: {
-    color: '#0F172A',
+    color: '#2C1F0E',
     fontSize: 14,
     fontWeight: '500',
   },
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     height: 10,
   },
   message: {
-    color: '#475569',
+    color: '#5C4A2E',
     fontSize: 16,
     textAlign: 'center',
     paddingTop: 24,

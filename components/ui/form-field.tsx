@@ -45,7 +45,7 @@ export default function FormField({
             style={styles.eyeButton}
             accessibilityLabel={hidden ? 'Show password' : 'Hide password'}
           >
-            <Ionicons name={hidden ? 'eye-off' : 'eye'} size={18} color="#64748B" />
+            <Ionicons name={hidden ? 'eye-off' : 'eye'} size={18} color="#9C886C" />
           </Pressable>
         )}
       </View>
@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   label: {
-    color: '#334155',
+    color: '#5C4A2E',
     fontSize: 13,
     fontWeight: '600',
     marginBottom: 6,
@@ -66,8 +66,8 @@ const styles = StyleSheet.create({
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderColor: '#CBD5E1',
+    backgroundColor: '#FFFAF4',
+    borderColor: '#E8D5B7',
     borderRadius: 10,
     borderWidth: 1,
   },

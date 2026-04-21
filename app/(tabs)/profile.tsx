@@ -8,27 +8,27 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext, ThemeContext } from '../_layout';
 
 const lightColors = {
-  background: '#F8FAFC',
-  title: '#0F172A',
-  subtitle: '#475569',
-  card: '#FFFFFF',
-  border: '#CBD5E1',
-  label: '#475569',
-  value: '#0F172A',
-  menuText: '#0F172A',
-  chevron: '#94A3B8',
+  background: '#FDF6EE',
+  title: '#2C1F0E',
+  subtitle: '#5C4A2E',
+  card: '#FFFAF4',
+  border: '#E8D5B7',
+  label: '#5C4A2E',
+  value: '#2C1F0E',
+  menuText: '#2C1F0E',
+  chevron: '#9C886C',
 };
 
 const darkColors = {
-  background: '#0F172A',
-  title: '#F1F5F9',
-  subtitle: '#94A3B8',
-  card: '#1E293B',
-  border: '#334155',
-  label: '#94A3B8',
-  value: '#F1F5F9',
-  menuText: '#F1F5F9',
-  chevron: '#64748B',
+  background: '#1C1612',
+  title: '#F5ECD8',
+  subtitle: '#D4C4A8',
+  card: '#251E14',
+  border: '#3D3020',
+  label: '#D4C4A8',
+  value: '#F5ECD8',
+  menuText: '#F5ECD8',
+  chevron: '#9C886C',
 };
 
 export default function ProfileScreen() {

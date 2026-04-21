@@ -38,47 +38,47 @@ function resolvePhotoSource(uri: string): any {
 }
 
 const lightColors = {
-  background: '#F8FAFC',
-  title: '#0F172A',
-  destination: '#475569',
-  message: '#475569',
-  card: '#FFFFFF',
-  border: '#CBD5E1',
-  infoLabel: '#475569',
-  infoValue: '#0F172A',
-  sectionTitle: '#0F172A',
-  sectionSubtitle: '#64748B',
-  emptyTitle: '#0F172A',
-  emptyText: '#475569',
-  cardTitle: '#0F172A',
-  cardDate: '#475569',
-  cardNotes: '#475569',
-  metaPillBg: '#F8FAFC',
-  metaPillText: '#0F172A',
-  placeholderBg: '#E2E8F0',
-  placeholderText: '#64748B',
+  background: '#FDF6EE',
+  title: '#2C1F0E',
+  destination: '#5C4A2E',
+  message: '#5C4A2E',
+  card: '#FFFAF4',
+  border: '#E8D5B7',
+  infoLabel: '#5C4A2E',
+  infoValue: '#2C1F0E',
+  sectionTitle: '#2C1F0E',
+  sectionSubtitle: '#9C886C',
+  emptyTitle: '#2C1F0E',
+  emptyText: '#5C4A2E',
+  cardTitle: '#2C1F0E',
+  cardDate: '#5C4A2E',
+  cardNotes: '#5C4A2E',
+  metaPillBg: '#FDF6EE',
+  metaPillText: '#2C1F0E',
+  placeholderBg: '#E8D5B7',
+  placeholderText: '#9C886C',
 };
 
 const darkColors = {
-  background: '#0F172A',
-  title: '#F1F5F9',
-  destination: '#94A3B8',
-  message: '#94A3B8',
-  card: '#1E293B',
-  border: '#334155',
-  infoLabel: '#94A3B8',
-  infoValue: '#F1F5F9',
-  sectionTitle: '#F1F5F9',
-  sectionSubtitle: '#94A3B8',
-  emptyTitle: '#F1F5F9',
-  emptyText: '#94A3B8',
-  cardTitle: '#F1F5F9',
-  cardDate: '#94A3B8',
-  cardNotes: '#94A3B8',
-  metaPillBg: '#0F172A',
-  metaPillText: '#F1F5F9',
-  placeholderBg: '#1E293B',
-  placeholderText: '#64748B',
+  background: '#1C1612',
+  title: '#F5ECD8',
+  destination: '#D4C4A8',
+  message: '#D4C4A8',
+  card: '#251E14',
+  border: '#3D3020',
+  infoLabel: '#D4C4A8',
+  infoValue: '#F5ECD8',
+  sectionTitle: '#F5ECD8',
+  sectionSubtitle: '#D4C4A8',
+  emptyTitle: '#F5ECD8',
+  emptyText: '#D4C4A8',
+  cardTitle: '#F5ECD8',
+  cardDate: '#D4C4A8',
+  cardNotes: '#D4C4A8',
+  metaPillBg: '#1C1612',
+  metaPillText: '#F5ECD8',
+  placeholderBg: '#251E14',
+  placeholderText: '#9C886C',
 };
 
 export default function TripDetailScreen() {
@@ -287,7 +287,7 @@ export default function TripDetailScreen() {
         <View style={[styles.infoBox, { backgroundColor: c.card, borderColor: c.border }]}>
           <Text style={[styles.infoLabel, { color: c.infoLabel }]}>Category</Text>
           <View style={styles.categoryRow}>
-            <View style={[styles.categoryDot, { backgroundColor: category?.color ?? '#CBD5E1' }]} />
+            <View style={[styles.categoryDot, { backgroundColor: category?.color ?? '#E8D5B7' }]} />
             <Text style={[styles.infoValue, { color: c.infoValue }]}>{category ? category.name : 'No category assigned'}</Text>
           </View>
         </View>

@@ -161,7 +161,7 @@ export default function ManageCategoriesScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FDF6EE',
   },
   header: {
     flexDirection: 'row',
@@ -174,11 +174,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 26,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#2C1F0E',
   },
   subtitle: {
     fontSize: 14,
-    color: '#475569',
+    color: '#5C4A2E',
     marginTop: 2,
   },
   list: {
@@ -189,10 +189,10 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FFFAF4',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#E8D5B7',
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontWeight: '600',
-    color: '#0F172A',
+    color: '#2C1F0E',
   },
   actions: {
     flexDirection: 'row',
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
     width: 8,
   },
   empty: {
-    color: '#64748B',
+    color: '#9C886C',
     fontSize: 15,
     textAlign: 'center',
     marginTop: 40,

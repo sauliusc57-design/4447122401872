@@ -39,25 +39,25 @@ const seededImages: Record<string, any> = {
 };
 
 const lightColors = {
-  card: '#FFFFFF',
-  border: '#CBD5E1',
-  title: '#0F172A',
-  meta: '#475569',
-  category: '#334155',
-  notes: '#334155',
-  placeholder: '#E2E8F0',
-  placeholderText: '#64748B',
+  card: '#FFFAF4',
+  border: '#E8D5B7',
+  title: '#2C1F0E',
+  meta: '#5C4A2E',
+  category: '#5C4A2E',
+  notes: '#5C4A2E',
+  placeholder: '#E8D5B7',
+  placeholderText: '#9C886C',
 };
 
 const darkColors = {
-  card: '#1E293B',
-  border: '#334155',
-  title: '#F1F5F9',
-  meta: '#94A3B8',
-  category: '#CBD5E1',
-  notes: '#CBD5E1',
-  placeholder: '#0F172A',
-  placeholderText: '#64748B',
+  card: '#251E14',
+  border: '#3D3020',
+  title: '#F5ECD8',
+  meta: '#D4C4A8',
+  category: '#D4C4A8',
+  notes: '#D4C4A8',
+  placeholder: '#1C1612',
+  placeholderText: '#9C886C',
 };
 
 export default function TripCard({ trip, category }: Props) {
@@ -107,7 +107,7 @@ export default function TripCard({ trip, category }: Props) {
         <View
           style={[
             styles.categoryDot,
-            { backgroundColor: category?.color ?? '#CBD5E1' },
+            { backgroundColor: category?.color ?? '#E8D5B7' },
           ]}
         />
         <Text style={[styles.categoryText, { color: c.category }]}>

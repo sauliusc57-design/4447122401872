@@ -39,7 +39,7 @@ export default function DatePickerField({ label, value, onChange }: Props) {
       <Text style={styles.label}>{label}</Text>
       <Pressable style={styles.field} onPress={open} accessibilityLabel={label}>
         <Text style={styles.value}>{formatDisplay(value)}</Text>
-        <Ionicons name="calendar-outline" size={18} color="#64748B" />
+        <Ionicons name="calendar-outline" size={18} color="#9C886C" />
       </Pressable>
 
       {Platform.OS === 'ios' && (
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   label: {
-    color: '#334155',
+    color: '#5C4A2E',
     fontSize: 13,
     fontWeight: '600',
     marginBottom: 6,
@@ -79,15 +79,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
-    borderColor: '#CBD5E1',
+    backgroundColor: '#FFFAF4',
+    borderColor: '#E8D5B7',
     borderRadius: 10,
     borderWidth: 1,
     paddingHorizontal: 12,
     paddingVertical: 12,
   },
   value: {
-    color: '#0F172A',
+    color: '#2C1F0E',
     fontSize: 15,
   },
   overlay: {
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FFFAF4',
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     paddingBottom: 32,
@@ -105,11 +105,11 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     paddingHorizontal: 20,
     paddingVertical: 14,
-    borderBottomColor: '#E2E8F0',
+    borderBottomColor: '#E8D5B7',
     borderBottomWidth: 1,
   },
   doneText: {
-    color: '#0F172A',
+    color: '#2C1F0E',
     fontSize: 16,
     fontWeight: '600',
   },

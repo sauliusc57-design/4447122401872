@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FDF6EE',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '85%',
@@ -139,13 +139,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#2C1F0E',
     marginBottom: 16,
   },
   sectionLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#334155',
+    color: '#5C4A2E',
     marginBottom: 8,
     marginTop: 4,
   },
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
   },
   swatchSelected: {
     borderWidth: 3,
-    borderColor: '#0F172A',
+    borderColor: '#2C1F0E',
   },
   iconGrid: {
     flexDirection: 'row',
@@ -175,10 +175,10 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: '#CBD5E1',
+    borderColor: '#E8D5B7',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FFFAF4',
   },
   iconEmoji: {
     fontSize: 22,

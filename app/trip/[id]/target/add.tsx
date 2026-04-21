@@ -155,7 +155,7 @@ function Chip({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FDF6EE',
   },
   content: {
     padding: 18,
@@ -164,16 +164,16 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#2C1F0E',
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 15,
-    color: '#475569',
+    color: '#5C4A2E',
     marginBottom: 18,
   },
   groupLabel: {
-    color: '#334155',
+    color: '#5C4A2E',
     fontSize: 13,
     fontWeight: '600',
     marginBottom: 8,
@@ -186,19 +186,19 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   chip: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#94A3B8',
+    backgroundColor: '#FFFAF4',
+    borderColor: '#E8D5B7',
     borderRadius: 999,
     borderWidth: 1,
     paddingHorizontal: 12,
     paddingVertical: 9,
   },
   chipSelected: {
-    backgroundColor: '#0F172A',
-    borderColor: '#0F172A',
+    backgroundColor: '#E8873A',
+    borderColor: '#E8873A',
   },
   chipText: {
-    color: '#0F172A',
+    color: '#2C1F0E',
     fontSize: 14,
     fontWeight: '500',
   },

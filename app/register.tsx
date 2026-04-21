@@ -92,7 +92,7 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FDF6EE',
   },
   content: {
     padding: 18,
@@ -101,19 +101,19 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 30,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#2C1F0E',
     marginBottom: 6,
   },
   subtitle: {
     fontSize: 15,
-    color: '#475569',
+    color: '#5C4A2E',
     marginBottom: 20,
   },
   spacer: {
     height: 14,
   },
   link: {
-    color: '#0F172A',
+    color: '#E8873A',
     fontSize: 15,
     fontWeight: '600',
     textAlign: 'center',

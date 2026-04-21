@@ -248,20 +248,20 @@ export default function EditTripScreen() {
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FDF6EE',
     flex: 1,
   },
   content: {
     padding: 18,
   },
   title: {
-    color: '#0F172A',
+    color: '#2C1F0E',
     fontSize: 28,
     fontWeight: '700',
     marginBottom: 4,
   },
   subtitle: {
-    color: '#475569',
+    color: '#5C4A2E',
     fontSize: 15,
     marginBottom: 18,
   },
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   helperText: {
-    color: '#64748B',
+    color: '#9C886C',
     marginTop: 10,
     marginBottom: 14,
   },
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
     height: 10,
   },
   message: {
-    color: '#475569',
+    color: '#5C4A2E',
     fontSize: 16,
     textAlign: 'center',
     paddingTop: 24,

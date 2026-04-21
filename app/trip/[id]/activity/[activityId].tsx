@@ -119,7 +119,7 @@ export default function ActivityDetailScreen() {
           <Text style={styles.infoLabel}>Category</Text>
           <View style={styles.categoryRow}>
             <View
-              style={[styles.categoryDot, { backgroundColor: category?.color ?? '#CBD5E1' }]}
+              style={[styles.categoryDot, { backgroundColor: category?.color ?? '#E8D5B7' }]}
             />
             <Text style={styles.infoValue}>
               {category ? category.name : 'Unknown category'}
@@ -172,39 +172,39 @@ export default function ActivityDetailScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FDF6EE',
   },
   content: {
     padding: 18,
     paddingBottom: 28,
   },
   title: {
-    color: '#0F172A',
+    color: '#2C1F0E',
     fontSize: 28,
     fontWeight: '700',
   },
   subtitle: {
-    color: '#475569',
+    color: '#5C4A2E',
     fontSize: 15,
     marginTop: 4,
     marginBottom: 16,
   },
   infoBox: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#CBD5E1',
+    backgroundColor: '#FFFAF4',
+    borderColor: '#E8D5B7',
     borderWidth: 1,
     borderRadius: 12,
     padding: 14,
     marginBottom: 12,
   },
   infoLabel: {
-    color: '#475569',
+    color: '#5C4A2E',
     fontSize: 13,
     fontWeight: '600',
     marginBottom: 4,
   },
   infoValue: {
-    color: '#0F172A',
+    color: '#2C1F0E',
     fontSize: 15,
   },
   categoryRow: {
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
     height: 10,
   },
   message: {
-    color: '#475569',
+    color: '#5C4A2E',
     fontSize: 16,
     textAlign: 'center',
     paddingTop: 24,
