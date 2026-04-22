@@ -3,6 +3,7 @@
 import TripCard from '@/components/TripCard';
 import PrimaryButton from '@/components/ui/primary-button';
 import { db } from '@/db/client';
+import { fetchUserCategories } from '@/db/queries';
 import { categories, trips } from '@/db/schema';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
@@ -21,6 +22,8 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { darkColors, lightColors } from '@/constants/theme';
+import { toDateString } from '@/lib/date-utils';
 import { AuthContext, ThemeContext } from '../_layout';
 
 type Trip = typeof trips.$inferSelect;
@@ -28,54 +31,6 @@ type Category = typeof categories.$inferSelect;
 
 const ALL_CATEGORIES = 'all';
 
-const lightColors = {
-  background: '#FDF6EE',
-  title: '#2C1F0E',
-  subtitle: '#5C4A2E',
-  text: '#2C1F0E',
-  card: '#FFFAF4',
-  border: '#E8D5B7',
-  placeholder: '#9C886C',
-  icon: '#9C886C',
-  chipBg: '#FDF6EE',
-  chipBorder: '#9C886C',
-  chipText: '#2C1F0E',
-  chipSelectedBg: '#E8873A',
-  chipSelectedText: '#FFFFFF',
-  dateLabel: '#5C4A2E',
-  message: '#5C4A2E',
-  clearText: '#E8873A',
-  iosDoneText: '#2C1F0E',
-  iosDoneBorder: '#E8D5B7',
-};
-
-const darkColors = {
-  background: '#1C1612',
-  title: '#F5ECD8',
-  subtitle: '#D4C4A8',
-  text: '#F5ECD8',
-  card: '#251E14',
-  border: '#3D3020',
-  placeholder: '#9C886C',
-  icon: '#9C886C',
-  chipBg: '#251E14',
-  chipBorder: '#3D3020',
-  chipText: '#F5ECD8',
-  chipSelectedBg: '#E8873A',
-  chipSelectedText: '#FFFFFF',
-  dateLabel: '#D4C4A8',
-  message: '#D4C4A8',
-  clearText: '#E8873A',
-  iosDoneText: '#F5ECD8',
-  iosDoneBorder: '#3D3020',
-};
-
-function toDateString(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
 
 function formatDisplay(d: Date): string {
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -110,7 +65,7 @@ export default function IndexScreen() {
 
         const [tripData, categoryData] = await Promise.all([
           db.select().from(trips).where(eq(trips.userId, currentUser.id)),
-          db.select().from(categories).where(eq(categories.userId, currentUser.id)),
+          fetchUserCategories(currentUser.id),
         ]);
 
         if (active) {

@@ -1,5 +1,7 @@
 import { AuthContext, ThemeContext } from '@/app/_layout';
+import { darkColors, lightColors } from '@/constants/theme';
 import { db } from '@/db/client';
+import { fetchUserCategories } from '@/db/queries';
 import { categories, tripPhotos, trips } from '@/db/schema';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -74,46 +76,6 @@ function formatDateRange(start: string, end: string): string {
   return `${s.toLocaleDateString('en-GB', opts)} – ${e.toLocaleDateString('en-GB', { ...opts, year: 'numeric' })}`;
 }
 
-const lightColors = {
-  background: '#FDF6EE',
-  title: '#2C1F0E',
-  subtitle: '#5C4A2E',
-  sectionTitle: '#2C1F0E',
-  sectionSubtitle: '#9C886C',
-  card: '#FFFAF4',
-  border: '#E8D5B7',
-  cardTitle: '#2C1F0E',
-  cardMeta: '#5C4A2E',
-  placeholderBg: '#E8D5B7',
-  placeholderText: '#9C886C',
-  yearLabel: '#9C886C',
-  emptyTitle: '#2C1F0E',
-  emptyText: '#5C4A2E',
-  memoryBadgeBg: '#FFF3E8',
-  memoryBadgeText: '#E8873A',
-  categoryDot: '#E8D5B7',
-};
-
-const darkColors = {
-  background: '#1C1612',
-  title: '#F5ECD8',
-  subtitle: '#D4C4A8',
-  sectionTitle: '#F5ECD8',
-  sectionSubtitle: '#D4C4A8',
-  card: '#251E14',
-  border: '#3D3020',
-  cardTitle: '#F5ECD8',
-  cardMeta: '#D4C4A8',
-  placeholderBg: '#251E14',
-  placeholderText: '#9C886C',
-  yearLabel: '#9C886C',
-  emptyTitle: '#F5ECD8',
-  emptyText: '#D4C4A8',
-  memoryBadgeBg: '#3D2810',
-  memoryBadgeText: '#E8873A',
-  categoryDot: '#3D3020',
-};
-
 export default function MemoriesScreen() {
   const router = useRouter();
   const auth = useContext(AuthContext);
@@ -140,7 +102,7 @@ export default function MemoriesScreen() {
 
         const [allTrips, userCategories] = await Promise.all([
           db.select().from(trips).where(eq(trips.userId, currentUser.id)),
-          db.select().from(categories).where(eq(categories.userId, currentUser.id)),
+          fetchUserCategories(currentUser.id),
         ]);
 
         const past = allTrips.filter((t) => t.endDate < today);

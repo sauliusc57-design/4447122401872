@@ -1,6 +1,7 @@
 import FormField from '@/components/ui/form-field';
 import PrimaryButton from '@/components/ui/primary-button';
 import { db } from '@/db/client';
+import { fetchUserCategories } from '@/db/queries';
 import { categories, targets } from '@/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -38,7 +39,7 @@ export default function EditTargetScreen() {
           .select()
           .from(targets)
           .where(and(eq(targets.id, Number(targetId)), eq(targets.userId, currentUser.id))),
-        db.select().from(categories).where(eq(categories.userId, currentUser.id)),
+        fetchUserCategories(currentUser.id),
       ]);
 
       const foundTarget = targetRows[0] ?? null;

@@ -1,35 +1,12 @@
 // Profile screen. Shows the logged-in user's email with options to toggle dark mode, manage categories, log out, or delete their account.
 import PrimaryButton from '@/components/ui/primary-button';
+import { darkColors, lightColors } from '@/constants/theme';
 import { deleteUserProfile } from '@/db/auth';
 import { useRouter } from 'expo-router';
 import { useContext } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext, ThemeContext } from '../_layout';
-
-const lightColors = {
-  background: '#FDF6EE',
-  title: '#2C1F0E',
-  subtitle: '#5C4A2E',
-  card: '#FFFAF4',
-  border: '#E8D5B7',
-  label: '#5C4A2E',
-  value: '#2C1F0E',
-  menuText: '#2C1F0E',
-  chevron: '#9C886C',
-};
-
-const darkColors = {
-  background: '#1C1612',
-  title: '#F5ECD8',
-  subtitle: '#D4C4A8',
-  card: '#251E14',
-  border: '#3D3020',
-  label: '#D4C4A8',
-  value: '#F5ECD8',
-  menuText: '#F5ECD8',
-  chevron: '#9C886C',
-};
 
 export default function ProfileScreen() {
   const auth = useContext(AuthContext);

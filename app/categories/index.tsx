@@ -1,6 +1,7 @@
 import CategoryFormModal, { PRESET_ICONS } from '@/components/ui/category-form-modal';
 import PrimaryButton from '@/components/ui/primary-button';
 import { db } from '@/db/client';
+import { fetchUserCategories } from '@/db/queries';
 import { activities, categories, trips } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { useRouter } from 'expo-router';
@@ -27,10 +28,7 @@ export default function ManageCategoriesScreen() {
 
   const load = async () => {
     if (!currentUser) return;
-    const data = await db
-      .select()
-      .from(categories)
-      .where(eq(categories.userId, currentUser.id));
+    const data = await fetchUserCategories(currentUser.id);
     setRows(data);
   };
 

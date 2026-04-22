@@ -3,29 +3,19 @@ import DatePickerField from '@/components/ui/date-picker-field';
 import FormField from '@/components/ui/form-field';
 import PrimaryButton from '@/components/ui/primary-button';
 import { db } from '@/db/client';
+import { fetchUserCategories } from '@/db/queries';
 import { activities, categories, trips } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useContext, useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { parseDateString, toDateString } from '@/lib/date-utils';
 import { AuthContext, ToastContext } from '../../../../_layout';
 
 type Activity = typeof activities.$inferSelect;
 type Category = typeof categories.$inferSelect;
 type Trip = typeof trips.$inferSelect;
-
-function parseDateString(s: string): Date {
-  const [y, m, d] = s.split('-').map(Number);
-  return new Date(y, m - 1, d);
-}
-
-function toDateString(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
 
 export default function EditActivityScreen() {
   const { activityId } = useLocalSearchParams<{ activityId: string }>();
@@ -57,7 +47,7 @@ export default function EditActivityScreen() {
 
       const [activityRows, categoryList, userTrips] = await Promise.all([
         db.select().from(activities).where(eq(activities.id, Number(activityId))),
-        db.select().from(categories).where(eq(categories.userId, currentUser.id)),
+        fetchUserCategories(currentUser.id),
         db.select().from(trips).where(eq(trips.userId, currentUser.id)),
       ]);
 

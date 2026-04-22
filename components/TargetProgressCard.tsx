@@ -1,5 +1,6 @@
 // Card component showing a single target's progress with a progress bar, status badge (Met/Exceeded/Unmet), and edit/delete buttons.
 import { ThemeContext } from '@/app/_layout';
+import { darkColors, lightColors } from '@/constants/theme';
 import PrimaryButton from '@/components/ui/primary-button';
 import { formatMetricValue, TargetProgress } from '@/lib/target-progress';
 import { useContext } from 'react';
@@ -9,32 +10,6 @@ type Props = {
   item: TargetProgress;
   onEdit: () => void;
   onDelete: () => void;
-};
-
-const lightColors = {
-  card: '#FFFAF4',
-  border: '#E8D5B7',
-  title: '#2C1F0E',
-  meta: '#5C4A2E',
-  progressText: '#2C1F0E',
-  progressTrack: '#E8D5B7',
-  subText: '#5C4A2E',
-  summary: '#2C1F0E',
-  statusUnmet: '#E8D5B7',
-  statusUnmetText: '#5C4A2E',
-};
-
-const darkColors = {
-  card: '#251E14',
-  border: '#3D3020',
-  title: '#F5ECD8',
-  meta: '#D4C4A8',
-  progressText: '#F5ECD8',
-  progressTrack: '#3D3020',
-  subText: '#D4C4A8',
-  summary: '#F5ECD8',
-  statusUnmet: '#3D3020',
-  statusUnmetText: '#D4C4A8',
 };
 
 export default function TargetProgressCard({ item, onEdit, onDelete }: Props) {

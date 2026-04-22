@@ -4,13 +4,15 @@ import DatePickerField from '@/components/ui/date-picker-field';
 import FormField from '@/components/ui/form-field';
 import PrimaryButton from '@/components/ui/primary-button';
 import { db } from '@/db/client';
+import { fetchUserCategories } from '@/db/queries';
 import { categories, trips } from '@/db/schema';
 import { and, eq } from 'drizzle-orm';
-import * as ImagePicker from 'expo-image-picker';
+import { pickImageFromLibrary } from '@/lib/image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useContext, useEffect, useState } from 'react';
 import { Alert, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { parseDateString, toDateString } from '@/lib/date-utils';
 import { AuthContext, ToastContext } from '../../_layout';
 
 type Trip = typeof trips.$inferSelect;
@@ -22,17 +24,6 @@ const seededImages: Record<string, any> = {
   'Week in London': require('../../../assets/images/trips/London.jpg'),
 };
 
-function parseDateString(s: string): Date {
-  const [y, m, d] = s.split('-').map(Number);
-  return new Date(y, m - 1, d);
-}
-
-function toDateString(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
 
 export default function EditTripScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -72,7 +63,7 @@ export default function EditTripScreen() {
           .select()
           .from(trips)
           .where(and(eq(trips.id, Number(id)), eq(trips.userId, currentUser.id))),
-        db.select().from(categories).where(eq(categories.userId, currentUser.id)),
+        fetchUserCategories(currentUser.id),
       ]);
 
       const trip = tripRows[0] ?? null;
@@ -106,7 +97,7 @@ export default function EditTripScreen() {
   }, [id, currentUser.id]);
 
   const reloadCategories = async () => {
-    const rows = await db.select().from(categories).where(eq(categories.userId, currentUser.id));
+    const rows = await fetchUserCategories(currentUser.id);
     setCategoryRows(rows);
     return rows;
   };
@@ -120,23 +111,8 @@ export default function EditTripScreen() {
   };
 
   const pickImage = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-    if (!permission.granted) {
-      Alert.alert('Permission needed', 'Please allow photo library access.');
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      allowsEditing: false,
-      quality: 0.8,
-    });
-
-    if (result.canceled || !result.assets || result.assets.length === 0) {
-      return;
-    }
-
-    setImageUri(result.assets[0].uri);
+    const uri = await pickImageFromLibrary();
+    if (uri) setImageUri(uri);
   };
 
   const saveTrip = async () => {

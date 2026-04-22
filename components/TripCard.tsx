@@ -1,6 +1,7 @@
 // Displays a trip as a pressable card showing its image, title, destination, dates, category, and notes.
 // Tapping the card navigates to the trip detail screen.
 import { ThemeContext } from '@/app/_layout';
+import { darkColors, lightColors } from '@/constants/theme';
 import { useRouter } from 'expo-router';
 import { useContext } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -36,28 +37,6 @@ const seededImages: Record<string, any> = {
   'Weekend in Paris': require('../assets/images/trips/Paris.jpg'),
   'Summer in Rome': require('../assets/images/trips/Rome.jpg'),
   'Week in London': require('../assets/images/trips/London.jpg'),
-};
-
-const lightColors = {
-  card: '#FFFAF4',
-  border: '#E8D5B7',
-  title: '#2C1F0E',
-  meta: '#5C4A2E',
-  category: '#5C4A2E',
-  notes: '#5C4A2E',
-  placeholder: '#E8D5B7',
-  placeholderText: '#9C886C',
-};
-
-const darkColors = {
-  card: '#251E14',
-  border: '#3D3020',
-  title: '#F5ECD8',
-  meta: '#D4C4A8',
-  category: '#D4C4A8',
-  notes: '#D4C4A8',
-  placeholder: '#1C1612',
-  placeholderText: '#9C886C',
 };
 
 export default function TripCard({ trip, category }: Props) {

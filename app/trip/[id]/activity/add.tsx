@@ -4,28 +4,18 @@ import DatePickerField from '@/components/ui/date-picker-field';
 import FormField from '@/components/ui/form-field';
 import PrimaryButton from '@/components/ui/primary-button';
 import { db } from '@/db/client';
+import { fetchUserCategories } from '@/db/queries';
 import { activities, categories, trips } from '@/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useContext, useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { parseDateString, toDateString } from '@/lib/date-utils';
 import { AuthContext, ToastContext } from '../../../_layout';
 
 type Trip = typeof trips.$inferSelect;
 type Category = typeof categories.$inferSelect;
-
-function parseDateString(s: string): Date {
-  const [y, m, d] = s.split('-').map(Number);
-  return new Date(y, m - 1, d);
-}
-
-function toDateString(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
 
 export default function AddActivityScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -61,7 +51,7 @@ export default function AddActivityScreen() {
           .select()
           .from(trips)
           .where(and(eq(trips.id, Number(id)), eq(trips.userId, currentUser.id))),
-        db.select().from(categories).where(eq(categories.userId, currentUser.id)),
+        fetchUserCategories(currentUser.id),
       ]);
 
       const foundTrip = tripRows[0] ?? null;
@@ -85,7 +75,7 @@ export default function AddActivityScreen() {
 
   const handleAddCategory = async (name: string, color: string, icon: string) => {
     await db.insert(categories).values({ userId: currentUser.id, name, color, icon });
-    const rows = await db.select().from(categories).where(eq(categories.userId, currentUser.id));
+    const rows = await fetchUserCategories(currentUser.id);
     setCategoryRows(rows);
     const created = rows.find((r) => r.name === name && r.color === color);
     if (created) setSelectedCategoryId(created.id);

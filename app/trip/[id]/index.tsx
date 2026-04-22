@@ -1,11 +1,13 @@
 import TargetProgressCard from '@/components/TargetProgressCard';
 import PrimaryButton from '@/components/ui/primary-button';
+import { darkColors, lightColors } from '@/constants/theme';
 import { db } from '@/db/client';
+import { fetchUserCategories } from '@/db/queries';
 import { activities, categories, targets, tripPhotos, trips } from '@/db/schema';
 import { calculateTargetProgress } from '@/lib/target-progress';
 import { useFocusEffect } from '@react-navigation/native';
 import { and, eq } from 'drizzle-orm';
-import * as ImagePicker from 'expo-image-picker';
+import { pickImageFromLibrary } from '@/lib/image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useContext, useState } from 'react';
 import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -36,50 +38,6 @@ const SEEDED_PHOTO_ASSETS: Record<string, any> = {
 function resolvePhotoSource(uri: string): any {
   return SEEDED_PHOTO_ASSETS[uri] ?? { uri };
 }
-
-const lightColors = {
-  background: '#FDF6EE',
-  title: '#2C1F0E',
-  destination: '#5C4A2E',
-  message: '#5C4A2E',
-  card: '#FFFAF4',
-  border: '#E8D5B7',
-  infoLabel: '#5C4A2E',
-  infoValue: '#2C1F0E',
-  sectionTitle: '#2C1F0E',
-  sectionSubtitle: '#9C886C',
-  emptyTitle: '#2C1F0E',
-  emptyText: '#5C4A2E',
-  cardTitle: '#2C1F0E',
-  cardDate: '#5C4A2E',
-  cardNotes: '#5C4A2E',
-  metaPillBg: '#FDF6EE',
-  metaPillText: '#2C1F0E',
-  placeholderBg: '#E8D5B7',
-  placeholderText: '#9C886C',
-};
-
-const darkColors = {
-  background: '#1C1612',
-  title: '#F5ECD8',
-  destination: '#D4C4A8',
-  message: '#D4C4A8',
-  card: '#251E14',
-  border: '#3D3020',
-  infoLabel: '#D4C4A8',
-  infoValue: '#F5ECD8',
-  sectionTitle: '#F5ECD8',
-  sectionSubtitle: '#D4C4A8',
-  emptyTitle: '#F5ECD8',
-  emptyText: '#D4C4A8',
-  cardTitle: '#F5ECD8',
-  cardDate: '#D4C4A8',
-  cardNotes: '#D4C4A8',
-  metaPillBg: '#1C1612',
-  metaPillText: '#F5ECD8',
-  placeholderBg: '#251E14',
-  placeholderText: '#9C886C',
-};
 
 export default function TripDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -118,7 +76,7 @@ export default function TripDetailScreen() {
             .select()
             .from(trips)
             .where(and(eq(trips.id, Number(id)), eq(trips.userId, currentUser.id))),
-          db.select().from(categories).where(eq(categories.userId, currentUser.id)),
+          fetchUserCategories(currentUser.id),
           db.select().from(activities),
           db
             .select()
@@ -177,21 +135,8 @@ export default function TripDetailScreen() {
   };
 
   const addPhoto = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert('Permission required', 'Allow access to your photo library to add photos.');
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 0.85,
-      allowsMultipleSelection: false,
-    });
-
-    if (result.canceled || result.assets.length === 0) return;
-
-    const uri = result.assets[0].uri;
+    const uri = await pickImageFromLibrary({ mediaTypes: ['images'], quality: 0.85, allowsMultipleSelection: false });
+    if (!uri) return;
     const now = new Date().toISOString();
     await db.insert(tripPhotos).values({ tripId: Number(id), uri, caption: null, createdAt: now });
 

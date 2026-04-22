@@ -1,5 +1,6 @@
 import PrimaryButton from '@/components/ui/primary-button';
 import { db } from '@/db/client';
+import { fetchUserCategories } from '@/db/queries';
 import { activities, categories, trips } from '@/db/schema';
 import { useFocusEffect } from '@react-navigation/native';
 import { eq } from 'drizzle-orm';
@@ -7,6 +8,7 @@ import { useCallback, useContext, useMemo, useState } from 'react';
 import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { BarChart, LineChart, PieChart } from 'react-native-chart-kit';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { darkColors, lightColors } from '@/constants/theme';
 import { AuthContext, ThemeContext } from '../_layout';
 
 type Activity = typeof activities.$inferSelect;
@@ -16,40 +18,6 @@ type Period = 'daily' | 'weekly' | 'monthly';
 
 const screenWidth = Dimensions.get('window').width;
 const chartWidth = screenWidth - 36;
-
-const lightColors = {
-  background: '#FDF6EE',
-  title: '#2C1F0E',
-  subtitle: '#5C4A2E',
-  card: '#FFFAF4',
-  border: '#E8D5B7',
-  label: '#5C4A2E',
-  value: '#2C1F0E',
-  sectionSubtitle: '#9C886C',
-  message: '#5C4A2E',
-  legendFont: '#5C4A2E',
-  chartLine: 'rgba(232, 135, 58,',
-  chartLabel: 'rgba(92, 74, 46,',
-  chartDot: '#E8873A',
-  pieEmpty: '#E8D5B7',
-};
-
-const darkColors = {
-  background: '#1C1612',
-  title: '#F5ECD8',
-  subtitle: '#D4C4A8',
-  card: '#251E14',
-  border: '#3D3020',
-  label: '#D4C4A8',
-  value: '#F5ECD8',
-  sectionSubtitle: '#D4C4A8',
-  message: '#D4C4A8',
-  legendFont: '#D4C4A8',
-  chartLine: 'rgba(232, 135, 58,',
-  chartLabel: 'rgba(212, 196, 168,',
-  chartDot: '#E8873A',
-  pieEmpty: '#3D3020',
-};
 
 function getWeekKey(dateString: string) {
   const date = new Date(`${dateString}T00:00:00`);
@@ -97,7 +65,7 @@ export default function InsightsScreen() {
         const [userTrips, allActivities, userCategories] = await Promise.all([
           db.select().from(trips).where(eq(trips.userId, currentUser.id)),
           db.select().from(activities),
-          db.select().from(categories).where(eq(categories.userId, currentUser.id)),
+          fetchUserCategories(currentUser.id),
         ]);
 
         const tripIds = userTrips.map((trip: Trip) => trip.id);
