@@ -1,5 +1,5 @@
-// Pressable button with three variants: primary (dark filled), secondary (light outlined), and danger (red outlined).
-// Supports a compact mode for smaller inline buttons.
+import { ThemeContext } from '@/app/_layout';
+import { useContext } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 
 type Props = {
@@ -15,6 +15,33 @@ export default function PrimaryButton({
   compact = false,
   variant = 'primary',
 }: Props) {
+  const themeCtx = useContext(ThemeContext);
+  const isDark = themeCtx?.isDark ?? false;
+
+  const buttonStyle = (() => {
+    if (variant === 'secondary') {
+      return {
+        backgroundColor: isDark ? '#251E14' : '#FFFAF4',
+        borderColor: isDark ? '#3D3020' : '#E8D5B7',
+        borderWidth: 1 as const,
+      };
+    }
+    if (variant === 'danger') {
+      return {
+        backgroundColor: isDark ? '#2D1010' : '#FFF3F0',
+        borderColor: isDark ? '#7C3535' : '#FCA5A5',
+        borderWidth: 1 as const,
+      };
+    }
+    return {};
+  })();
+
+  const labelStyle = (() => {
+    if (variant === 'secondary') return { color: isDark ? '#F5ECD8' : '#2C1F0E' };
+    if (variant === 'danger') return { color: isDark ? '#FCA5A5' : '#7F1D1D' };
+    return {};
+  })();
+
   return (
     <Pressable
       accessibilityLabel={label}
@@ -22,8 +49,7 @@ export default function PrimaryButton({
       onPress={onPress}
       style={({ pressed }) => [
         styles.button,
-        variant === 'secondary' ? styles.secondary : null,
-        variant === 'danger' ? styles.danger : null,
+        buttonStyle,
         compact ? styles.compact : null,
         pressed ? styles.pressed : null,
       ]}
@@ -31,8 +57,7 @@ export default function PrimaryButton({
       <Text
         style={[
           styles.label,
-          variant === 'secondary' ? styles.secondaryLabel : null,
-          variant === 'danger' ? styles.dangerLabel : null,
+          labelStyle,
           compact ? styles.compactLabel : null,
         ]}
       >
@@ -50,16 +75,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 11,
   },
-  secondary: {
-    backgroundColor: '#FFFAF4',
-    borderColor: '#E8D5B7',
-    borderWidth: 1,
-  },
-  danger: {
-    backgroundColor: '#FFF3F0',
-    borderColor: '#FCA5A5',
-    borderWidth: 1,
-  },
   compact: {
     alignSelf: 'flex-start',
     marginTop: 12,
@@ -73,12 +88,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '600',
-  },
-  secondaryLabel: {
-    color: '#2C1F0E',
-  },
-  dangerLabel: {
-    color: '#7F1D1D',
   },
   compactLabel: {
     fontSize: 13,

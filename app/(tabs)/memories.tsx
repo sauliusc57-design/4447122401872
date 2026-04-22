@@ -9,7 +9,10 @@ import { eq, inArray } from 'drizzle-orm';
 import { useRouter } from 'expo-router';
 import { useCallback, useContext, useMemo, useState } from 'react';
 import {
+  Dimensions,
+  FlatList,
   Image,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -21,6 +24,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 type Trip = typeof trips.$inferSelect;
 type TripPhoto = typeof tripPhotos.$inferSelect;
 type Category = typeof categories.$inferSelect;
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const SEEDED_ASSETS: Record<string, any> = {
   'seeded:Paris': require('../../assets/images/trips/Paris.jpg'),
@@ -90,6 +95,24 @@ export default function MemoriesScreen() {
   const [allPhotos, setAllPhotos] = useState<TripPhoto[]>([]);
   const [categoryRows, setCategoryRows] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [fullscreenPhotos, setFullscreenPhotos] = useState<{ source: any; caption?: string | null }[]>([]);
+  const [fullscreenVisible, setFullscreenVisible] = useState(false);
+
+  const openFullscreen = (trip: Trip) => {
+    const tripPhotoList = allPhotos.filter((p) => p.tripId === trip.id);
+    if (tripPhotoList.length > 0) {
+      setFullscreenPhotos(tripPhotoList.map((p) => ({ source: resolvePhotoSource(p.uri), caption: p.caption })));
+    } else {
+      const cover = getCoverSource(trip, []);
+      if (cover) {
+        setFullscreenPhotos([{ source: cover }]);
+      } else {
+        return;
+      }
+    }
+    setFullscreenVisible(true);
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -179,20 +202,26 @@ export default function MemoriesScreen() {
                 const category = categoryRows.find((cat) => cat.id === trip.categoryId) ?? null;
 
                 return (
-                  <Pressable
-                    key={trip.id}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Memory: ${trip.title}`}
-                    onPress={() => router.push({ pathname: '/trip/[id]', params: { id: String(trip.id) } })}
-                    style={({ pressed }) => [styles.memoryCard, pressed && styles.pressed]}
-                  >
-                    {cover ? (
-                      <Image source={cover} style={styles.memoryCardImage} resizeMode="cover" />
-                    ) : (
-                      <View style={[styles.memoryCardImage, styles.memoryCardPlaceholder, { backgroundColor: c.placeholderBg }]} />
-                    )}
+                  <View key={trip.id} style={styles.memoryCard}>
+                    {/* Image area — tap to view fullscreen photos */}
+                    <Pressable
+                      style={StyleSheet.absoluteFill}
+                      onPress={() => openFullscreen(trip)}
+                      accessibilityLabel={`View photos for ${trip.title}`}
+                    >
+                      {cover ? (
+                        <Image source={cover} style={styles.memoryCardImage} resizeMode="cover" />
+                      ) : (
+                        <View style={[styles.memoryCardImage, styles.memoryCardPlaceholder, { backgroundColor: c.placeholderBg }]} />
+                      )}
+                    </Pressable>
 
-                    <View style={styles.memoryCardOverlay}>
+                    {/* Overlay — tap to go to trip detail */}
+                    <Pressable
+                      style={styles.memoryCardOverlay}
+                      onPress={() => router.push({ pathname: '/trip/[id]', params: { id: String(trip.id) } })}
+                      accessibilityLabel={`Open trip: ${trip.title}`}
+                    >
                       <Text style={styles.memoryCardTitle} numberOfLines={2}>{trip.title}</Text>
                       <Text style={styles.memoryCardDest} numberOfLines={1}>{trip.destination}</Text>
                       <Text style={styles.memoryCardDates}>{formatDateRange(trip.startDate, trip.endDate)}</Text>
@@ -202,7 +231,7 @@ export default function MemoriesScreen() {
                           <Text style={styles.memoryPhotoCountText}>{photoCount}</Text>
                         </View>
                       )}
-                    </View>
+                    </Pressable>
 
                     {category && (
                       <View style={[styles.memoryBadge, { backgroundColor: c.memoryBadgeBg }]}>
@@ -211,7 +240,7 @@ export default function MemoriesScreen() {
                         </Text>
                       </View>
                     )}
-                  </Pressable>
+                  </View>
                 );
               })}
             </ScrollView>
@@ -253,13 +282,19 @@ export default function MemoriesScreen() {
                         pressed && styles.pressed,
                       ]}
                     >
-                      {cover ? (
-                        <Image source={cover} style={styles.pastCardImage} resizeMode="cover" />
-                      ) : (
-                        <View style={[styles.pastCardImage, { backgroundColor: c.placeholderBg, alignItems: 'center', justifyContent: 'center' }]}>
-                          <Ionicons name="camera-outline" size={28} color={c.placeholderText} />
-                        </View>
-                      )}
+                      {/* Image area — separate tap to open fullscreen */}
+                      <Pressable
+                        onPress={() => openFullscreen(trip)}
+                        accessibilityLabel={`View photos for ${trip.title}`}
+                      >
+                        {cover ? (
+                          <Image source={cover} style={styles.pastCardImage} resizeMode="cover" />
+                        ) : (
+                          <View style={[styles.pastCardImage, { backgroundColor: c.placeholderBg, alignItems: 'center', justifyContent: 'center' }]}>
+                            <Ionicons name="camera-outline" size={28} color={c.placeholderText} />
+                          </View>
+                        )}
+                      </Pressable>
 
                       <View style={styles.pastCardBody}>
                         <Text style={[styles.pastCardTitle, { color: c.cardTitle }]} numberOfLines={1}>
@@ -295,6 +330,48 @@ export default function MemoriesScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Fullscreen photo viewer */}
+      <Modal
+        visible={fullscreenVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setFullscreenVisible(false)}
+      >
+        <View style={styles.fullscreenContainer}>
+          <FlatList
+            data={fullscreenPhotos}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(_, index) => String(index)}
+            getItemLayout={(_, index) => ({
+              length: SCREEN_WIDTH,
+              offset: SCREEN_WIDTH * index,
+              index,
+            })}
+            renderItem={({ item }) => (
+              <View style={styles.fullscreenItemContainer}>
+                <Image
+                  source={item.source}
+                  style={styles.fullscreenImage}
+                  resizeMode="contain"
+                />
+                {item.caption ? (
+                  <Text style={styles.fullscreenCaption}>{item.caption}</Text>
+                ) : null}
+              </View>
+            )}
+          />
+          <Pressable
+            style={styles.fullscreenClose}
+            onPress={() => setFullscreenVisible(false)}
+            accessibilityLabel="Close fullscreen"
+          >
+            <Ionicons name="close" size={26} color="#fff" />
+          </Pressable>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -377,4 +454,31 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { fontSize: 17, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
   emptyText: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
+
+  fullscreenContainer: { flex: 1, backgroundColor: '#000' },
+  fullscreenItemContainer: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullscreenImage: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT * 0.75,
+  },
+  fullscreenCaption: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 14,
+    marginTop: 14,
+    paddingHorizontal: 24,
+    textAlign: 'center',
+  },
+  fullscreenClose: {
+    position: 'absolute',
+    top: 52,
+    right: 18,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderRadius: 20,
+    padding: 8,
+  },
 });

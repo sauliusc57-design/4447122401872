@@ -33,10 +33,18 @@ function getMonthKey(dateString: string) {
   return dateString.slice(0, 7);
 }
 
-function formatPeriodLabel(key: string, period: Period) {
-  if (period === 'daily') return key.slice(5);
-  if (period === 'weekly') return key.replace('2026-', '');
-  return key;
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function formatPeriodLabel(key: string, period: Period): string {
+  if (period === 'daily') {
+    const [, m, d] = key.split('-');
+    return `${MONTH_NAMES[parseInt(m, 10) - 1]} ${parseInt(d, 10)}`;
+  }
+  if (period === 'weekly') {
+    return key.replace(/^\d{4}-/, ''); // "2026-W24" → "W24"
+  }
+  const [year, m] = key.split('-');
+  return `${MONTH_NAMES[parseInt(m, 10) - 1]} '${year.slice(2)}`; // "Jun '26"
 }
 
 export default function InsightsScreen() {
@@ -103,9 +111,15 @@ export default function InsightsScreen() {
     }, {});
 
     const sortedKeys = Object.keys(grouped).sort();
+    const allLabels = sortedKeys.map((key) => formatPeriodLabel(key, selectedPeriod));
+
+    // Show at most 6 labels — pass "" for skipped ones so the chart still plots all points
+    const MAX_VISIBLE = 6;
+    const step = Math.max(1, Math.ceil(allLabels.length / MAX_VISIBLE));
+    const labels = allLabels.map((label, i) => (i % step === 0 ? label : ''));
 
     return {
-      labels: sortedKeys.map((key) => formatPeriodLabel(key, selectedPeriod)),
+      labels,
       values: sortedKeys.map((key) => grouped[key]),
     };
   }, [activityRows, selectedPeriod]);

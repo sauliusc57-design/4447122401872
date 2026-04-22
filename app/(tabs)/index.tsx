@@ -1,5 +1,3 @@
-// Main trips list screen. Loads the logged-in user's trips and categories from SQLite,
-// and lets them filter by text search, category, and a single date.
 import TripCard from '@/components/TripCard';
 import PrimaryButton from '@/components/ui/primary-button';
 import { db } from '@/db/client';
@@ -12,6 +10,7 @@ import { eq } from 'drizzle-orm';
 import { useRouter } from 'expo-router';
 import { useCallback, useContext, useMemo, useState } from 'react';
 import {
+  LayoutAnimation,
   Modal,
   Platform,
   Pressable,
@@ -19,6 +18,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  UIManager,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -26,11 +26,15 @@ import { darkColors, lightColors } from '@/constants/theme';
 import { toDateString } from '@/lib/date-utils';
 import { AuthContext, ThemeContext } from '../_layout';
 
+// Enable LayoutAnimation on Android
+if (Platform.OS === 'android') {
+  UIManager.setLayoutAnimationEnabledExperimental?.(true);
+}
+
 type Trip = typeof trips.$inferSelect;
 type Category = typeof categories.$inferSelect;
 
 const ALL_CATEGORIES = 'all';
-
 
 function formatDisplay(d: Date): string {
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -53,6 +57,7 @@ export default function IndexScreen() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>(ALL_CATEGORIES);
   const [filterDate, setFilterDate] = useState<Date | null>(null);
   const [iosPickerVisible, setIosPickerVisible] = useState(false);
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -136,6 +141,16 @@ export default function IndexScreen() {
     selectedCategoryId !== ALL_CATEGORIES ||
     filterDate !== null;
 
+  const toggleFilters = () => {
+    LayoutAnimation.configureNext({
+      duration: 220,
+      create: { type: 'easeInEaseOut', property: 'opacity' },
+      update: { type: 'easeInEaseOut' },
+      delete: { type: 'easeInEaseOut', property: 'opacity' },
+    });
+    setFiltersExpanded((prev) => !prev);
+  };
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: c.background }]}>
       <Text style={[styles.title, { color: c.title }]}>My Trips</Text>
@@ -147,103 +162,126 @@ export default function IndexScreen() {
 
       {!loading && tripRows.length > 0 ? (
         <>
-          <TextInput
-            accessibilityLabel="Search trips"
-            autoCapitalize="none"
-            autoCorrect={false}
-            onChangeText={setSearchQuery}
-            placeholder="Search by title, destination, or notes"
-            placeholderTextColor={c.placeholder}
-            style={[styles.searchInput, { backgroundColor: c.card, borderColor: c.border, color: c.text }]}
-            value={searchQuery}
-          />
-
-          <View style={styles.filterRow}>
+          {/* Search row with filter toggle */}
+          <View style={styles.searchRow}>
+            <TextInput
+              accessibilityLabel="Search trips"
+              autoCapitalize="none"
+              autoCorrect={false}
+              onChangeText={setSearchQuery}
+              placeholder="Search by title, destination, or notes"
+              placeholderTextColor={c.placeholder}
+              style={[styles.searchInput, { backgroundColor: c.card, borderColor: c.border, color: c.text }]}
+              value={searchQuery}
+            />
             <Pressable
-              accessibilityLabel="Filter by all categories"
+              accessibilityLabel={filtersExpanded ? 'Collapse filters' : 'Expand filters'}
               accessibilityRole="button"
-              onPress={() => setSelectedCategoryId(ALL_CATEGORIES)}
-              style={[
-                styles.filterChip,
-                { backgroundColor: c.chipBg, borderColor: c.chipBorder },
-                selectedCategoryId === ALL_CATEGORIES && { backgroundColor: c.chipSelectedBg, borderColor: c.chipSelectedBg },
-              ]}
+              onPress={toggleFilters}
+              style={[styles.filterToggleBtn, { backgroundColor: c.card, borderColor: hasActiveFilters ? c.chipSelectedBg : c.border }]}
             >
-              <Text
-                style={[
-                  styles.filterChipText,
-                  { color: c.chipText },
-                  selectedCategoryId === ALL_CATEGORIES && { color: c.chipSelectedText },
-                ]}
-              >
-                All
-              </Text>
-            </Pressable>
-
-            {categoryRows.map((category) => {
-              const isSelected = selectedCategoryId === String(category.id);
-              return (
-                <Pressable
-                  key={category.id}
-                  accessibilityLabel={`Filter by ${category.name}`}
-                  accessibilityRole="button"
-                  onPress={() => setSelectedCategoryId(String(category.id))}
-                  style={[
-                    styles.filterChip,
-                    { backgroundColor: c.chipBg, borderColor: c.chipBorder },
-                    isSelected && { backgroundColor: c.chipSelectedBg, borderColor: c.chipSelectedBg },
-                  ]}
-                >
-                  <View style={[styles.filterDot, { backgroundColor: category.color }]} />
-                  <Text
-                    style={[
-                      styles.filterChipText,
-                      { color: c.chipText },
-                      isSelected && { color: c.chipSelectedText },
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {category.name}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          <View style={styles.dateRow}>
-            <Text style={[styles.dateLabel, { color: c.dateLabel }]}>Date</Text>
-            <Pressable
-              accessibilityLabel="Filter trips by date"
-              accessibilityRole="button"
-              onPress={openDatePicker}
-              style={[styles.datePicker, { backgroundColor: c.card, borderColor: c.border }]}
-            >
-              <Ionicons name="calendar-outline" size={16} color={c.icon} style={styles.calendarIcon} />
-              <Text style={[styles.datePickerText, { color: filterDate ? c.text : c.placeholder }]}>
-                {filterDate ? formatDisplay(filterDate) : 'Select a date'}
-              </Text>
-              {filterDate && (
-                <Pressable
-                  accessibilityLabel="Clear date filter"
-                  onPress={() => setFilterDate(null)}
-                  hitSlop={8}
-                >
-                  <Ionicons name="close-circle" size={18} color={c.placeholder} />
-                </Pressable>
+              <Ionicons
+                name={filtersExpanded ? 'chevron-up' : 'chevron-down'}
+                size={18}
+                color={hasActiveFilters ? c.chipSelectedBg : c.icon}
+              />
+              {hasActiveFilters && (
+                <View style={styles.filterActiveDot} />
               )}
             </Pressable>
           </View>
 
-          {hasActiveFilters && (
-            <View style={styles.helperRow}>
-              <Pressable
-                accessibilityLabel="Clear all trip filters"
-                accessibilityRole="button"
-                onPress={clearFilters}
-              >
-                <Text style={[styles.clearText, { color: c.clearText }]}>Clear filters</Text>
-              </Pressable>
-            </View>
+          {/* Collapsible filters */}
+          {filtersExpanded && (
+            <>
+              <View style={styles.filterRow}>
+                <Pressable
+                  accessibilityLabel="Filter by all categories"
+                  accessibilityRole="button"
+                  onPress={() => setSelectedCategoryId(ALL_CATEGORIES)}
+                  style={[
+                    styles.filterChip,
+                    { backgroundColor: c.chipBg, borderColor: c.chipBorder },
+                    selectedCategoryId === ALL_CATEGORIES && { backgroundColor: c.chipSelectedBg, borderColor: c.chipSelectedBg },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      { color: c.chipText },
+                      selectedCategoryId === ALL_CATEGORIES && { color: c.chipSelectedText },
+                    ]}
+                  >
+                    All
+                  </Text>
+                </Pressable>
+
+                {categoryRows.map((category) => {
+                  const isSelected = selectedCategoryId === String(category.id);
+                  return (
+                    <Pressable
+                      key={category.id}
+                      accessibilityLabel={`Filter by ${category.name}`}
+                      accessibilityRole="button"
+                      onPress={() => setSelectedCategoryId(String(category.id))}
+                      style={[
+                        styles.filterChip,
+                        { backgroundColor: c.chipBg, borderColor: c.chipBorder },
+                        isSelected && { backgroundColor: c.chipSelectedBg, borderColor: c.chipSelectedBg },
+                      ]}
+                    >
+                      <View style={[styles.filterDot, { backgroundColor: category.color }]} />
+                      <Text
+                        style={[
+                          styles.filterChipText,
+                          { color: c.chipText },
+                          isSelected && { color: c.chipSelectedText },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {category.name}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              <View style={styles.dateRow}>
+                <Text style={[styles.dateLabel, { color: c.dateLabel }]}>Date</Text>
+                <Pressable
+                  accessibilityLabel="Filter trips by date"
+                  accessibilityRole="button"
+                  onPress={openDatePicker}
+                  style={[styles.datePicker, { backgroundColor: c.card, borderColor: c.border }]}
+                >
+                  <Ionicons name="calendar-outline" size={16} color={c.icon} style={styles.calendarIcon} />
+                  <Text style={[styles.datePickerText, { color: filterDate ? c.text : c.placeholder }]}>
+                    {filterDate ? formatDisplay(filterDate) : 'Select a date'}
+                  </Text>
+                  {filterDate && (
+                    <Pressable
+                      accessibilityLabel="Clear date filter"
+                      onPress={() => setFilterDate(null)}
+                      hitSlop={8}
+                    >
+                      <Ionicons name="close-circle" size={18} color={c.placeholder} />
+                    </Pressable>
+                  )}
+                </Pressable>
+              </View>
+
+              {hasActiveFilters && (
+                <View style={styles.helperRow}>
+                  <Pressable
+                    accessibilityLabel="Clear all trip filters"
+                    accessibilityRole="button"
+                    onPress={clearFilters}
+                  >
+                    <Text style={[styles.clearText, { color: c.clearText }]}>Clear filters</Text>
+                  </Pressable>
+                </View>
+              )}
+            </>
           )}
         </>
       ) : null}
@@ -307,13 +345,36 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 14,
   },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 14,
+  },
   searchInput: {
+    flex: 1,
     borderRadius: 12,
     borderWidth: 1,
     fontSize: 15,
-    marginTop: 14,
     paddingHorizontal: 12,
     paddingVertical: 10,
+  },
+  filterToggleBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterActiveDot: {
+    position: 'absolute',
+    top: 7,
+    right: 7,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: '#E8873A',
   },
   filterRow: {
     flexDirection: 'row',
