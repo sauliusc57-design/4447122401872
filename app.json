@@ -2,10 +2,11 @@
   "expo": {
     "name": "4447122401872",
     "slug": "4447122401872",
+    "platforms": ["ios", "android"],
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "4447122401872",
+    "scheme": "tripplanner",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -44,6 +45,19 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "338f438f-47aa-4456-92c2-50dece0e460c"
+      }
+    },
+    "owner": "sauliuscomber",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/338f438f-47aa-4456-92c2-50dece0e460c"
     }
   }
 }
