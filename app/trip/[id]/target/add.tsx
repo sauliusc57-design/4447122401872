@@ -11,12 +11,14 @@ import { AuthContext, ToastContext } from '../../../_layout';
 
 type Category = typeof categories.$inferSelect;
 
+// Add Target screen — create a weekly or monthly goal for the given trip
 export default function AddTargetScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const auth = useContext(AuthContext);
   const toast = useContext(ToastContext);
 
+  // Form field state
   const [categoryRows, setCategoryRows] = useState<Category[]>([]);
   const [scope, setScope] = useState<'trip' | 'category'>('trip');
   const [period, setPeriod] = useState<'weekly' | 'monthly'>('weekly');
@@ -28,6 +30,7 @@ export default function AddTargetScreen() {
 
   const { currentUser } = auth;
 
+  // Load user categories and default-select the first one
   useEffect(() => {
     const loadCategories = async () => {
       const rows = await db
@@ -45,6 +48,7 @@ export default function AddTargetScreen() {
     loadCategories();
   }, [currentUser.id]);
 
+  // Validate inputs then insert the new target record
   const saveTarget = async () => {
     const parsedValue = Number(targetValue);
 
@@ -58,6 +62,7 @@ export default function AddTargetScreen() {
       return;
     }
 
+    // Null out categoryId when scope is whole-trip
     await db.insert(targets).values({
       userId: currentUser.id,
       tripId: Number(id),

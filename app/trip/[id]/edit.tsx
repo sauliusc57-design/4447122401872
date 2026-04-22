@@ -18,13 +18,14 @@ import { AuthContext, ToastContext } from '../../_layout';
 type Trip = typeof trips.$inferSelect;
 type Category = typeof categories.$inferSelect;
 
+// Bundled images for seeded demo trips — keyed by trip title
 const seededImages: Record<string, any> = {
   'Weekend in Paris': require('../../../assets/images/trips/Paris.jpg'),
   'Summer in Rome': require('../../../assets/images/trips/Rome.jpg'),
   'Week in London': require('../../../assets/images/trips/London.jpg'),
 };
 
-
+// Edit Trip screen — loads an existing trip and saves changes
 export default function EditTripScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -38,6 +39,7 @@ export default function EditTripScreen() {
   const [categoryRows, setCategoryRows] = useState<Category[]>([]);
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
 
+  // Form field state
   const [title, setTitle] = useState('');
   const [city, setCity] = useState('');
   const [country, setCountry] = useState('');
@@ -51,6 +53,7 @@ export default function EditTripScreen() {
 
   const { currentUser } = auth;
 
+  // Load the trip record and user categories on mount
   useEffect(() => {
     const loadTrip = async () => {
       if (!id) {
@@ -74,6 +77,7 @@ export default function EditTripScreen() {
       if (trip) {
         setTitle(trip.title);
 
+        // Split stored "City, Country" destination back into separate fields
         const commaIdx = trip.destination.indexOf(', ');
         if (commaIdx >= 0) {
           setCity(trip.destination.slice(0, commaIdx));
@@ -96,12 +100,14 @@ export default function EditTripScreen() {
     loadTrip();
   }, [id, currentUser.id]);
 
+  // Refresh the category list and return the updated rows
   const reloadCategories = async () => {
     const rows = await fetchUserCategories(currentUser.id);
     setCategoryRows(rows);
     return rows;
   };
 
+  // Insert a new inline category then auto-select it in the picker
   const handleAddCategory = async (name: string, color: string, icon: string) => {
     await db.insert(categories).values({ userId: currentUser.id, name, color, icon });
     const rows = await reloadCategories();
@@ -110,11 +116,13 @@ export default function EditTripScreen() {
     setCategoryModalVisible(false);
   };
 
+  // Open the device image library and store the selected URI
   const pickImage = async () => {
     const uri = await pickImageFromLibrary();
     if (uri) setImageUri(uri);
   };
 
+  // Validate inputs then write the updated trip to the database
   const saveTrip = async () => {
     if (!title.trim() || !city.trim()) {
       Alert.alert('Missing details', 'Please complete the title and city.');
@@ -126,6 +134,7 @@ export default function EditTripScreen() {
       return;
     }
 
+    // Combine city and optional country into a single destination string
     const destination = country.trim()
       ? `${city.trim()}, ${country.trim()}`
       : city.trim();
@@ -163,6 +172,7 @@ export default function EditTripScreen() {
     );
   }
 
+  // Use a seeded demo image as fallback when no user-selected image exists
   const fallbackImage = seededImages[existingTrip.title];
   const hasValidLocalImage = typeof imageUri === 'string' && imageUri.length > 0;
 

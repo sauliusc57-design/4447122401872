@@ -23,6 +23,7 @@ import { AuthContext, ToastContext } from '../_layout';
 
 type Category = typeof categories.$inferSelect;
 
+// Add Trip screen — create a new trip with image, category and date range
 export default function AddTripScreen() {
   const router = useRouter();
   const auth = useContext(AuthContext);
@@ -31,6 +32,7 @@ export default function AddTripScreen() {
 
   const today = new Date();
 
+  // Form field state
   const [title, setTitle] = useState('');
   const [city, setCity] = useState('');
   const [country, setCountry] = useState('');
@@ -42,6 +44,7 @@ export default function AddTripScreen() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
 
+  // Fetch all user categories and refresh the picker list
   const loadCategories = async () => {
     if (!currentUser) return;
     const rows = await fetchUserCategories(currentUser.id);
@@ -49,12 +52,14 @@ export default function AddTripScreen() {
     return rows;
   };
 
+  // Load categories on mount and default-select the first one
   useEffect(() => {
     loadCategories().then((rows) => {
       if (rows && rows.length > 0) setSelectedCategoryId(rows[0].id);
     });
   }, []);
 
+  // Insert a new inline category then auto-select it in the picker
   const handleAddCategory = async (name: string, color: string, icon: string) => {
     if (!currentUser) return;
     await db.insert(categories).values({ userId: currentUser.id, name, color, icon });
@@ -64,11 +69,13 @@ export default function AddTripScreen() {
     setCategoryModalVisible(false);
   };
 
+  // Open the device image library and store the selected URI
   const pickImage = async () => {
     const uri = await pickImageFromLibrary();
     if (uri) setImageUri(uri);
   };
 
+  // Validate inputs then insert the new trip record
   const saveTrip = async () => {
     if (!title.trim() || !city.trim()) {
       Alert.alert('Missing details', 'Please complete the title and city.');
@@ -80,6 +87,7 @@ export default function AddTripScreen() {
       return;
     }
 
+    // Combine city and optional country into a single destination string
     const destination = country.trim()
       ? `${city.trim()}, ${country.trim()}`
       : city.trim();

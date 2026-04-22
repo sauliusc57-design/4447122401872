@@ -3,12 +3,14 @@ import PrimaryButton from '@/components/ui/primary-button';
 import { useEffect, useState } from 'react';
 import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+// Available colour swatches for a category
 const PRESET_COLORS = [
   '#4F46E5', '#3B82F6', '#10B981', '#14B8A6',
   '#F59E0B', '#F97316', '#EF4444', '#EC4899',
   '#8B5CF6', '#64748B',
 ];
 
+// Available icon options — value is the DB key, label is the rendered emoji
 export const PRESET_ICONS: { value: string; label: string }[] = [
   { value: 'map', label: '🗺️' },
   { value: 'restaurant', label: '🍽️' },
@@ -31,6 +33,7 @@ type Props = {
   onCancel: () => void;
 };
 
+// CategoryFormModal — bottom-sheet modal for creating or editing a category
 export default function CategoryFormModal({
   visible,
   initialName = '',
@@ -43,6 +46,7 @@ export default function CategoryFormModal({
   const [color, setColor] = useState(initialColor);
   const [icon, setIcon] = useState(initialIcon);
 
+  // Reset form fields each time the modal opens with fresh initial values
   useEffect(() => {
     if (visible) {
       setName(initialName);
@@ -51,6 +55,7 @@ export default function CategoryFormModal({
     }
   }, [visible, initialName, initialColor, initialIcon]);
 
+  // Validate name then pass values up to the parent handler
   const handleSave = () => {
     if (!name.trim()) {
       Alert.alert('Missing name', 'Please enter a category name.');

@@ -7,7 +7,9 @@ export type ThemedViewProps = ViewProps & {
   darkColor?: string;
 };
 
+// ThemedView — View component that automatically applies the current theme background colour
 export function ThemedView({ style, lightColor, darkColor, ...otherProps }: ThemedViewProps) {
+  // Resolve background colour from the active theme, with optional per-instance overrides
   const backgroundColor = useThemeColor({ light: lightColor, dark: darkColor }, 'background');
 
   return <View style={[{ backgroundColor }, style]} {...otherProps} />;

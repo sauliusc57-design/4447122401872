@@ -9,10 +9,12 @@ type Props = {
   visible: boolean;
 };
 
+// Toast — floating notification banner that fades and slides in/out from the top of the screen
 export default function Toast({ message, type, visible }: Props) {
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(-12)).current;
 
+  // Animate in when visible, animate out when hidden
   useEffect(() => {
     if (visible) {
       Animated.parallel([
@@ -27,6 +29,7 @@ export default function Toast({ message, type, visible }: Props) {
     }
   }, [visible]);
 
+  // Green for success/delete, red-toned for errors
   const bgColor =
     type === 'success' ? 'rgba(58, 138, 92, 0.82)' : 'rgba(192, 68, 46, 0.82)';
 

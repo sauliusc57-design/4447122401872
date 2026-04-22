@@ -9,6 +9,7 @@ type Props = {
   onChange: (date: Date) => void;
 };
 
+// Format a date as "DD Mon YYYY" for display in the field
 function formatDisplay(date: Date): string {
   return date.toLocaleDateString('en-GB', {
     day: '2-digit',
@@ -17,9 +18,11 @@ function formatDisplay(date: Date): string {
   });
 }
 
+// DatePickerField — cross-platform date picker that uses a native dialog on Android and a modal spinner on iOS
 export default function DatePickerField({ label, value, onChange }: Props) {
   const [iosVisible, setIosVisible] = useState(false);
 
+  // Open the platform-appropriate date picker
   const open = () => {
     if (Platform.OS === 'android') {
       DateTimePickerAndroid.open({
@@ -42,6 +45,7 @@ export default function DatePickerField({ label, value, onChange }: Props) {
         <Ionicons name="calendar-outline" size={18} color="#9C886C" />
       </Pressable>
 
+      {/* iOS-only bottom-sheet spinner modal */}
       {Platform.OS === 'ios' && (
         <Modal visible={iosVisible} transparent animationType="slide">
           <View style={styles.overlay}>

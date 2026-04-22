@@ -17,6 +17,7 @@ import { AuthContext, ToastContext } from '../../../_layout';
 type Trip = typeof trips.$inferSelect;
 type Category = typeof categories.$inferSelect;
 
+// Add Activity screen — creates a new activity under the given trip
 export default function AddActivityScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -27,6 +28,7 @@ export default function AddActivityScreen() {
   const [categoryRows, setCategoryRows] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Form field state
   const [title, setTitle] = useState('');
   const [activityDate, setActivityDate] = useState<Date>(new Date());
   const [durationMinutes, setDurationMinutes] = useState('');
@@ -39,6 +41,7 @@ export default function AddActivityScreen() {
 
   const { currentUser } = auth;
 
+  // Load the parent trip and user categories on mount
   useEffect(() => {
     const loadData = async () => {
       if (!id) {
@@ -59,6 +62,7 @@ export default function AddActivityScreen() {
       setTrip(foundTrip);
       setCategoryRows(categoryList);
 
+      // Default to the first category and the trip's start date
       if (categoryList.length > 0) {
         setSelectedCategoryId(categoryList[0].id);
       }
@@ -73,6 +77,7 @@ export default function AddActivityScreen() {
     loadData();
   }, [id, currentUser.id]);
 
+  // Insert a new inline category then auto-select it in the picker
   const handleAddCategory = async (name: string, color: string, icon: string) => {
     await db.insert(categories).values({ userId: currentUser.id, name, color, icon });
     const rows = await fetchUserCategories(currentUser.id);
@@ -82,6 +87,7 @@ export default function AddActivityScreen() {
     setCategoryModalVisible(false);
   };
 
+  // Validate inputs then insert the new activity record
   const saveActivity = async () => {
     if (!trip) return;
 

@@ -17,6 +17,7 @@ type Activity = typeof activities.$inferSelect;
 type Category = typeof categories.$inferSelect;
 type Trip = typeof trips.$inferSelect;
 
+// Edit Activity screen — loads an existing activity and saves changes
 export default function EditActivityScreen() {
   const { activityId } = useLocalSearchParams<{ activityId: string }>();
   const router = useRouter();
@@ -27,6 +28,7 @@ export default function EditActivityScreen() {
   const [existingActivity, setExistingActivity] = useState<Activity | null>(null);
   const [categoryRows, setCategoryRows] = useState<Category[]>([]);
 
+  // Form field state
   const [title, setTitle] = useState('');
   const [activityDate, setActivityDate] = useState<Date>(new Date());
   const [durationMinutes, setDurationMinutes] = useState('');
@@ -38,6 +40,7 @@ export default function EditActivityScreen() {
 
   const { currentUser } = auth;
 
+  // Load the activity record and user categories on mount
   useEffect(() => {
     const loadActivity = async () => {
       if (!activityId) {
@@ -52,6 +55,7 @@ export default function EditActivityScreen() {
       ]);
 
       const foundActivity = activityRows[0] ?? null;
+      // Only allow editing activities that belong to a trip owned by this user
       const userTripIds = userTrips.map((trip: Trip) => trip.id);
 
       if (!foundActivity || !userTripIds.includes(foundActivity.tripId)) {
@@ -61,6 +65,7 @@ export default function EditActivityScreen() {
         return;
       }
 
+      // Populate form fields with existing activity data
       setExistingActivity(foundActivity);
       setCategoryRows(categoryList);
       setTitle(foundActivity.title);
@@ -76,6 +81,7 @@ export default function EditActivityScreen() {
     loadActivity();
   }, [activityId, currentUser.id]);
 
+  // Validate inputs then write the updated activity to the database
   const saveActivity = async () => {
     if (!existingActivity) return;
 

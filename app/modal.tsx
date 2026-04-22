@@ -4,6 +4,7 @@ import { StyleSheet } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 
+// Placeholder modal screen — shown when the modal route is opened
 export default function ModalScreen() {
   return (
     <ThemedView style={styles.container}>

@@ -1,6 +1,7 @@
 import { SymbolView, SymbolViewProps, SymbolWeight } from 'expo-symbols';
 import { StyleProp, ViewStyle } from 'react-native';
 
+// IconSymbol (iOS) — renders an SF Symbol via expo-symbols, sized and tinted as specified
 export function IconSymbol({
   name,
   size = 24,

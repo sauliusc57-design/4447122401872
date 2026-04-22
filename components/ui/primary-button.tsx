@@ -9,6 +9,7 @@ type Props = {
   variant?: 'primary' | 'secondary' | 'danger';
 };
 
+// PrimaryButton — themed button supporting primary (orange), secondary, and danger variants
 export default function PrimaryButton({
   label,
   onPress,
@@ -18,6 +19,7 @@ export default function PrimaryButton({
   const themeCtx = useContext(ThemeContext);
   const isDark = themeCtx?.isDark ?? false;
 
+  // Resolve background and border colours based on variant and dark mode
   const buttonStyle = (() => {
     if (variant === 'secondary') {
       return {
@@ -36,6 +38,7 @@ export default function PrimaryButton({
     return {};
   })();
 
+  // Resolve label text colour based on variant and dark mode
   const labelStyle = (() => {
     if (variant === 'secondary') return { color: isDark ? '#F5ECD8' : '#2C1F0E' };
     if (variant === 'danger') return { color: isDark ? '#FCA5A5' : '#7F1D1D' };

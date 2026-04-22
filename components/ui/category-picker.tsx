@@ -15,6 +15,7 @@ type Props = {
   label?: string;
 };
 
+// CategoryPicker — horizontal scrollable row of category chips with an optional "+ New" button
 export default function CategoryPicker({
   categories,
   selectedCategoryId,
@@ -43,12 +44,14 @@ export default function CategoryPicker({
               style={[
                 styles.chip,
                 { borderColor: category.color },
+                // Fill the chip with the category colour when selected
                 isSelected && { backgroundColor: category.color },
               ]}
             >
               <View
                 style={[
                   styles.dot,
+                  // Switch dot to white so it stays visible against the filled background
                   { backgroundColor: isSelected ? '#FFFFFF' : category.color },
                 ]}
               />
@@ -64,6 +67,7 @@ export default function CategoryPicker({
           );
         })}
 
+        {/* Optional "+ New" chip that opens the category creation modal */}
         {onAdd && (
           <Pressable
             accessibilityRole="button"

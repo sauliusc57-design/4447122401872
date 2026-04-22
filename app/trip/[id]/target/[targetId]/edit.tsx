@@ -13,6 +13,7 @@ import { AuthContext, ToastContext } from '../../../../_layout';
 type Category = typeof categories.$inferSelect;
 type Target = typeof targets.$inferSelect;
 
+// Edit Target screen — update the goal settings for an existing target
 export default function EditTargetScreen() {
   const { targetId } = useLocalSearchParams<{ targetId: string }>();
   const router = useRouter();
@@ -22,6 +23,8 @@ export default function EditTargetScreen() {
   const [loading, setLoading] = useState(true);
   const [target, setTarget] = useState<Target | null>(null);
   const [categoryRows, setCategoryRows] = useState<Category[]>([]);
+
+  // Form field state
   const [scope, setScope] = useState<'trip' | 'category'>('trip');
   const [period, setPeriod] = useState<'weekly' | 'monthly'>('weekly');
   const [metricType, setMetricType] = useState<'minutes' | 'count'>('count');
@@ -32,6 +35,7 @@ export default function EditTargetScreen() {
 
   const { currentUser } = auth;
 
+  // Load the target record and user categories on mount
   useEffect(() => {
     const loadData = async () => {
       const [targetRows, categoryData] = await Promise.all([
@@ -48,6 +52,7 @@ export default function EditTargetScreen() {
       setCategoryRows(categoryData);
 
       if (foundTarget) {
+        // Derive scope from whether a categoryId is stored
         setScope(foundTarget.categoryId == null ? 'trip' : 'category');
         setPeriod(foundTarget.period as 'weekly' | 'monthly');
         setMetricType(foundTarget.metricType as 'minutes' | 'count');
@@ -61,6 +66,7 @@ export default function EditTargetScreen() {
     loadData();
   }, [targetId, currentUser.id]);
 
+  // Validate inputs then write the updated target to the database
   const saveChanges = async () => {
     if (!target) return;
 
@@ -76,6 +82,7 @@ export default function EditTargetScreen() {
       return;
     }
 
+    // Null out categoryId when scope is whole-trip
     await db
       .update(targets)
       .set({

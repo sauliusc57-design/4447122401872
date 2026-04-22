@@ -11,6 +11,7 @@ import { ThemedView } from '@/components/themed-view';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useThemeColor } from '@/hooks/use-theme-color';
 
+// Fixed height of the parallax header in pixels
 const HEADER_HEIGHT = 250;
 
 type Props = PropsWithChildren<{
@@ -18,6 +19,7 @@ type Props = PropsWithChildren<{
   headerBackgroundColor: { dark: string; light: string };
 }>;
 
+// ParallaxScrollView — scroll view with a header image that translates and scales as the user scrolls
 export default function ParallaxScrollView({
   children,
   headerImage,
@@ -27,6 +29,8 @@ export default function ParallaxScrollView({
   const colorScheme = useColorScheme() ?? 'light';
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollOffset(scrollRef);
+
+  // Derive translateY and scale from scroll position to create the parallax effect
   const headerAnimatedStyle = useAnimatedStyle(() => {
     return {
       transform: [

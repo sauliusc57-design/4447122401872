@@ -8,6 +8,7 @@ export type ThemedTextProps = TextProps & {
   type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link';
 };
 
+// ThemedText — Text component that automatically applies the current theme colour and a preset type style
 export function ThemedText({
   style,
   lightColor,
@@ -15,6 +16,7 @@ export function ThemedText({
   type = 'default',
   ...rest
 }: ThemedTextProps) {
+  // Resolve text colour from the active theme, with optional per-instance overrides
   const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
 
   return (
@@ -33,6 +35,7 @@ export function ThemedText({
   );
 }
 
+// Preset text styles mapped to each type variant
 const styles = StyleSheet.create({
   default: {
     fontSize: 16,

@@ -12,10 +12,12 @@ import { AuthContext, ToastContext } from '../_layout';
 
 type Category = typeof categories.$inferSelect;
 
+// Build a lookup from icon value key to emoji label for rendering in the list
 const ICON_MAP: Record<string, string> = Object.fromEntries(
   PRESET_ICONS.map(({ value, label }) => [value, label])
 );
 
+// Manage Categories screen — list, add, edit, and delete user categories
 export default function ManageCategoriesScreen() {
   const router = useRouter();
   const auth = useContext(AuthContext);
@@ -26,6 +28,7 @@ export default function ManageCategoriesScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
 
+  // Fetch all categories belonging to the current user
   const load = async () => {
     if (!currentUser) return;
     const data = await fetchUserCategories(currentUser.id);
@@ -34,16 +37,19 @@ export default function ManageCategoriesScreen() {
 
   useEffect(() => { load(); }, []);
 
+  // Open the modal in create mode
   const openAdd = () => {
     setEditing(null);
     setModalVisible(true);
   };
 
+  // Open the modal pre-filled with an existing category
   const openEdit = (cat: Category) => {
     setEditing(cat);
     setModalVisible(true);
   };
 
+  // Insert a new category or update an existing one depending on editing state
   const handleSave = async (name: string, color: string, icon: string) => {
     if (!currentUser) return;
 
@@ -66,6 +72,7 @@ export default function ManageCategoriesScreen() {
     load();
   };
 
+  // Block deletion if the category is still referenced by trips or activities
   const handleDelete = async (cat: Category) => {
     const [tripUsage, activityUsage] = await Promise.all([
       db.select().from(trips).where(eq(trips.categoryId, cat.id)),
@@ -86,6 +93,7 @@ export default function ManageCategoriesScreen() {
       return;
     }
 
+    // Confirm before permanently deleting the category
     Alert.alert('Delete Category', `Delete "${cat.name}"?`, [
       { text: 'Cancel', style: 'cancel' },
       {
