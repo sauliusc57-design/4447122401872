@@ -7,7 +7,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useContext, useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AuthContext } from '../../../_layout';
+import { AuthContext, ToastContext } from '../../../_layout';
 
 type Category = typeof categories.$inferSelect;
 
@@ -15,6 +15,7 @@ export default function AddTargetScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const auth = useContext(AuthContext);
+  const toast = useContext(ToastContext);
 
   const [categoryRows, setCategoryRows] = useState<Category[]>([]);
   const [scope, setScope] = useState<'trip' | 'category'>('trip');
@@ -67,6 +68,7 @@ export default function AddTargetScreen() {
       createdAt: new Date().toISOString(),
     });
 
+    toast?.showToast('Target saved!');
     router.back();
   };
 

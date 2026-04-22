@@ -11,7 +11,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useContext, useEffect, useState } from 'react';
 import { Alert, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AuthContext } from '../../_layout';
+import { AuthContext, ToastContext } from '../../_layout';
 
 type Trip = typeof trips.$inferSelect;
 type Category = typeof categories.$inferSelect;
@@ -38,6 +38,7 @@ export default function EditTripScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const auth = useContext(AuthContext);
+  const toast = useContext(ToastContext);
 
   const today = new Date();
 
@@ -166,6 +167,7 @@ export default function EditTripScreen() {
       })
       .where(and(eq(trips.id, Number(id)), eq(trips.userId, currentUser.id)));
 
+    toast?.showToast('Trip updated!');
     router.back();
   };
 

@@ -7,11 +7,12 @@ import { Link } from 'expo-router';
 import { useContext, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AuthContext } from './_layout';
+import { AuthContext, ToastContext } from './_layout';
 
 export default function LoginScreen() {
   // Pull auth state from the root layout context so we can set the user on login.
   const auth = useContext(AuthContext);
+  const toast = useContext(ToastContext);
 
   // Controlled inputs bound to the email and password text fields.
   const [email, setEmail] = useState('');
@@ -31,7 +32,7 @@ export default function LoginScreen() {
 
     try {
       const user = await loginUser(email, password);
-      // Setting currentUser triggers AuthGate to redirect to the main app.
+      toast?.showToast('Welcome back!');
       setCurrentUser(user);
     } catch (error) {
       Alert.alert(

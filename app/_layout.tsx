@@ -4,13 +4,14 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { File, Paths } from 'expo-file-system';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import 'react-native-reanimated';
 
 import type { User } from '@/db/auth';
 import { seedHolidayPlannerIfEmpty, seedPastTripsAndPhotosIfEmpty } from '@/db/seed';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import Toast, { type ToastType } from '@/components/ui/toast';
 
 type AuthContextValue = {
   currentUser: User | null;
@@ -22,11 +23,18 @@ type ThemeContextValue = {
   toggleTheme: () => void;
 };
 
+type ToastContextValue = {
+  showToast: (message: string, type?: ToastType) => void;
+};
+
 // Shared auth state — provides currentUser and setCurrentUser to all screens via useContext.
 export const AuthContext = createContext<AuthContextValue | null>(null);
 
 // Provides isDark and toggleTheme to any screen that wants to read or control the theme.
 export const ThemeContext = createContext<ThemeContextValue | null>(null);
+
+// Global toast notifications — call showToast from any screen.
+export const ToastContext = createContext<ToastContextValue | null>(null);
 
 function getThemeFile() {
   return new File(Paths.document, 'theme-preference.json');
@@ -93,13 +101,31 @@ export default function RootLayout() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [appReady, setAppReady] = useState(false);
 
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<ToastType>('success');
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showToast = useCallback((message: string, type: ToastType = 'success') => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToastMessage(message);
+    setToastType(type);
+    setToastVisible(true);
+    toastTimer.current = setTimeout(() => setToastVisible(false), 2500);
+  }, []);
+
   useEffect(() => {
     const prepareApp = async () => {
-      await seedHolidayPlannerIfEmpty();
-      await seedPastTripsAndPhotosIfEmpty();
-      const savedTheme = await loadThemePreference();
-      if (savedTheme !== null) setThemeOverride(savedTheme);
-      setAppReady(true);
+      try {
+        await seedHolidayPlannerIfEmpty();
+        await seedPastTripsAndPhotosIfEmpty();
+        const savedTheme = await loadThemePreference();
+        if (savedTheme !== null) setThemeOverride(savedTheme);
+      } catch (e) {
+        console.error('App preparation failed:', e);
+      } finally {
+        setAppReady(true);
+      }
     };
     prepareApp();
   }, []);
@@ -127,6 +153,8 @@ export default function RootLayout() {
     [currentUser]
   );
 
+  const toastValue = useMemo(() => ({ showToast }), [showToast]);
+
   if (!appReady) {
     return (
       <ThemeContext.Provider value={themeValue}>
@@ -149,14 +177,17 @@ export default function RootLayout() {
 
   return (
     <ThemeContext.Provider value={themeValue}>
-      <NavigationThemeWrapper>
-        <AuthContext.Provider value={authValue}>
-          <AuthGate currentUser={currentUser}>
-            <Slot />
-          </AuthGate>
-        </AuthContext.Provider>
-        <StatusBar style={isDark ? 'light' : 'dark'} />
-      </NavigationThemeWrapper>
+      <ToastContext.Provider value={toastValue}>
+        <NavigationThemeWrapper>
+          <AuthContext.Provider value={authValue}>
+            <AuthGate currentUser={currentUser}>
+              <Slot />
+            </AuthGate>
+          </AuthContext.Provider>
+          <Toast message={toastMessage} type={toastType} visible={toastVisible} />
+          <StatusBar style={isDark ? 'light' : 'dark'} />
+        </NavigationThemeWrapper>
+      </ToastContext.Provider>
     </ThemeContext.Provider>
   );
 }

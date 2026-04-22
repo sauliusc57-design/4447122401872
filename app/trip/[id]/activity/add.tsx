@@ -10,7 +10,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useContext, useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AuthContext } from '../../../_layout';
+import { AuthContext, ToastContext } from '../../../_layout';
 
 type Trip = typeof trips.$inferSelect;
 type Category = typeof categories.$inferSelect;
@@ -31,6 +31,7 @@ export default function AddActivityScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const auth = useContext(AuthContext);
+  const toast = useContext(ToastContext);
 
   const [trip, setTrip] = useState<Trip | null>(null);
   const [categoryRows, setCategoryRows] = useState<Category[]>([]);
@@ -123,6 +124,7 @@ export default function AddActivityScreen() {
       createdAt: new Date().toISOString(),
     });
 
+    toast?.showToast('Activity added!');
     router.back();
   };
 

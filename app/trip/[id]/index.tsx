@@ -10,7 +10,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useContext, useState } from 'react';
 import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AuthContext, ThemeContext } from '../../_layout';
+import { AuthContext, ThemeContext, ToastContext } from '../../_layout';
 
 type Trip = typeof trips.$inferSelect;
 type Category = typeof categories.$inferSelect;
@@ -85,6 +85,7 @@ export default function TripDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const auth = useContext(AuthContext);
+  const toast = useContext(ToastContext);
   const themeCtx = useContext(ThemeContext);
 
   const isDark = themeCtx?.isDark ?? false;
@@ -168,6 +169,7 @@ export default function TripDetailScreen() {
           await db.delete(activities).where(eq(activities.tripId, trip.id));
           await db.delete(targets).where(eq(targets.tripId, trip.id));
           await db.delete(trips).where(eq(trips.id, trip.id));
+          toast?.showToast('Trip deleted', 'delete');
           router.back();
         },
       },

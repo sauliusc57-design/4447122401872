@@ -7,11 +7,12 @@ import { Link } from 'expo-router';
 import { useContext, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AuthContext } from './_layout';
+import { AuthContext, ToastContext } from './_layout';
 
 export default function RegisterScreen() {
   // Pull auth state from the root layout context so we can set the user after registration.
   const auth = useContext(AuthContext);
+  const toast = useContext(ToastContext);
 
   // Controlled inputs for the three registration fields.
   const [email, setEmail] = useState('');
@@ -38,7 +39,7 @@ export default function RegisterScreen() {
 
     try {
       const user = await registerUser(email, password);
-      // Setting currentUser triggers AuthGate to redirect to the main app.
+      toast?.showToast('Account created!');
       setCurrentUser(user);
     } catch (error) {
       Alert.alert(

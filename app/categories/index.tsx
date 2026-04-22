@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 import { useContext, useEffect, useState } from 'react';
 import { Alert, FlatList, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AuthContext } from '../_layout';
+import { AuthContext, ToastContext } from '../_layout';
 
 type Category = typeof categories.$inferSelect;
 
@@ -18,6 +18,7 @@ const ICON_MAP: Record<string, string> = Object.fromEntries(
 export default function ManageCategoriesScreen() {
   const router = useRouter();
   const auth = useContext(AuthContext);
+  const toast = useContext(ToastContext);
   const currentUser = auth?.currentUser ?? null;
 
   const [rows, setRows] = useState<Category[]>([]);
@@ -94,6 +95,7 @@ export default function ManageCategoriesScreen() {
         style: 'destructive',
         onPress: async () => {
           await db.delete(categories).where(eq(categories.id, cat.id));
+          toast?.showToast('Category deleted', 'delete');
           load();
         },
       },

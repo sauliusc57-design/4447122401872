@@ -18,7 +18,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AuthContext } from '../_layout';
+import { AuthContext, ToastContext } from '../_layout';
 
 type Category = typeof categories.$inferSelect;
 
@@ -32,6 +32,7 @@ function toDateString(d: Date): string {
 export default function AddTripScreen() {
   const router = useRouter();
   const auth = useContext(AuthContext);
+  const toast = useContext(ToastContext);
   const currentUser = auth?.currentUser ?? null;
 
   const today = new Date();
@@ -118,6 +119,7 @@ export default function AddTripScreen() {
       createdAt: now,
     });
 
+    toast?.showToast('Trip created!');
     router.back();
   };
 

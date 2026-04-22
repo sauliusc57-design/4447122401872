@@ -7,7 +7,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useContext, useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AuthContext } from '../../../../_layout';
+import { AuthContext, ToastContext } from '../../../../_layout';
 
 type Category = typeof categories.$inferSelect;
 type Target = typeof targets.$inferSelect;
@@ -16,6 +16,7 @@ export default function EditTargetScreen() {
   const { targetId } = useLocalSearchParams<{ targetId: string }>();
   const router = useRouter();
   const auth = useContext(AuthContext);
+  const toast = useContext(ToastContext);
 
   const [loading, setLoading] = useState(true);
   const [target, setTarget] = useState<Target | null>(null);
@@ -84,6 +85,7 @@ export default function EditTargetScreen() {
       })
       .where(and(eq(targets.id, target.id), eq(targets.userId, currentUser.id)));
 
+    toast?.showToast('Target updated!');
     router.back();
   };
 

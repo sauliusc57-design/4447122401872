@@ -5,9 +5,10 @@ import { activities, categories, trips } from '@/db/schema';
 import { useFocusEffect } from '@react-navigation/native';
 import { eq } from 'drizzle-orm';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useContext, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ToastContext } from '../../../_layout';
 
 type Activity = typeof activities.$inferSelect;
 type Category = typeof categories.$inferSelect;
@@ -16,6 +17,7 @@ type Trip = typeof trips.$inferSelect;
 export default function ActivityDetailScreen() {
   const { activityId, id } = useLocalSearchParams<{ activityId: string; id: string }>();
   const router = useRouter();
+  const toast = useContext(ToastContext);
 
   const [activity, setActivity] = useState<Activity | null>(null);
   const [category, setCategory] = useState<Category | null>(null);
@@ -82,6 +84,7 @@ export default function ActivityDetailScreen() {
         style: 'destructive',
         onPress: async () => {
           await db.delete(activities).where(eq(activities.id, activity.id));
+          toast?.showToast('Activity deleted', 'delete');
           router.back();
         },
       },

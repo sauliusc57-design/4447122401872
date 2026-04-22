@@ -37,7 +37,7 @@ export default function TabLayout() {
         name="memories"
         options={{
           title: 'Memories',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="photo.fill" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="bookmark.fill" color={color} />,
         }}
       />
 
