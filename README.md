@@ -1,5 +1,8 @@
 # Plans?
 
+**GitHub:** https://github.com/sauliusc57-design/4447122401872
+**Expo:** https://expo.dev/accounts/sauliuscomber/projects/4447122401872/updates/f16ef536-63bf-4294-9cb3-9afe477bb7db
+
 **Plans?** is a trip planning mobile application built to help people track their upcoming trips, plan activities, and upload memories for each trip they go on. It is my take on the holiday / trip planner app — you can browse upcoming and past journeys, log activities with time metrics, set goals, and keep a photo diary for each trip.
 
 Built with **React Native**, **Expo**, **Drizzle ORM**, and **SQLite**.
