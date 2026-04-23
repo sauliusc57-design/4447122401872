@@ -1,50 +1,86 @@
-# Welcome to your Expo app 👋
+# Plans?
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**Plans?** is a trip planning mobile application built to help people track their upcoming trips, plan activities, and upload memories for each trip they go on. It is my take on the holiday / trip planner app — you can browse upcoming and past journeys, log activities with time metrics, set goals, and keep a photo diary for each trip.
 
-## Get started
+Built with **React Native**, **Expo**, **Drizzle ORM**, and **SQLite**.
 
-1. Install dependencies
+---
 
-   ```bash
-   npm install
-   ```
+## Getting Started
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+### 1. Install dependencies
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### 2. Start the app
 
-## Learn more
+```bash
+npx expo start
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+### Option A — Expo published update (recommended)
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Open the link below in a browser on your phone, or scan the QR code on that page with Expo Go:
 
-## Join the community
+**https://expo.dev/accounts/sauliuscomber/projects/4447122401872/updates/f16ef536-63bf-4294-9cb3-9afe477bb7db**
 
-Join our community of developers creating universal apps.
+> Download Expo Go first if you don't have it: https://expo.dev/go
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+### Option B — run locally
+
+In the terminal output you will see a QR code. Scan it with the **Expo Go** app (available on iOS and Android) to open the project on your device.
+
+- iOS: open the Camera app and point it at the QR code
+- Android: open Expo Go and tap **Scan QR code**
+
+---
+
+## Demo / Seeded Account
+
+The database is seeded automatically on first launch. You can log straight in with the following credentials — no registration needed:
+
+| Field    | Value              |
+|----------|--------------------|
+| Email    | demo@planner.com   |
+| Password | demo123            |
+
+The seeded account includes:
+
+- Three upcoming trips (Paris, Rome, London) with planned and completed activities
+- Five past trips (Paris, London, Rome, Barcelona, Berlin) with sample photos
+- Trip categories, activity targets, and time metrics pre-populated
+
+---
+
+## Environment Variables
+
+No environment variables are required to run the app. The database is local (SQLite via `expo-sqlite`) and all data lives on-device.
+
+---
+
+## Scripts
+
+| Command               | Description                          |
+|-----------------------|--------------------------------------|
+| `npm start`           | Start the Expo development server    |
+| `npx expo start`      | Same as above                        |
+| `npm run android`     | Start on Android emulator            |
+| `npm run ios`         | Start on iOS simulator               |
+| `npm run typecheck`   | Run TypeScript type checking         |
+| `npm test`            | Run the test suite                   |
+| `npm run db:generate` | Regenerate Drizzle ORM migrations    |
+
+---
+
+## Tech Stack
+
+| Technology                  | Purpose                              |
+|-----------------------------|--------------------------------------|
+| React Native + Expo         | Cross-platform mobile framework      |
+| Expo Router                 | File-based navigation                |
+| Drizzle ORM + expo-sqlite   | Local relational database            |
+| React Native Reanimated     | Animations and gesture handling      |
+| React Native Chart Kit      | Activity graphs and statistics       |
+| Expo Image Picker           | Upload photos from device gallery    |
