@@ -359,8 +359,9 @@ export async function seedPastTripsAndPhotosIfEmpty() {
 
   const cityBreak = userCategories.find((c) => c.name === 'City Break');
   const foodTrip = userCategories.find((c) => c.name === 'Food Trip');
+  const adventure = userCategories.find((c) => c.name === 'Adventure');
 
-  if (!cityBreak || !foodTrip) return;
+  if (!cityBreak || !foodTrip || !adventure) return;
 
   await db.insert(trips).values([
     {
@@ -396,14 +397,38 @@ export async function seedPastTripsAndPhotosIfEmpty() {
       imageUri: null,
       createdAt: now,
     },
+    {
+      userId: demoUser.id,
+      categoryId: cityBreak.id,
+      title: 'Barcelona Long Weekend',
+      destination: 'Barcelona, Spain',
+      startDate: '2025-05-09',
+      endDate: '2025-05-13',
+      notes: 'Gaudí architecture, tapas crawls and lazy afternoons on the beach.',
+      imageUri: null,
+      createdAt: now,
+    },
+    {
+      userId: demoUser.id,
+      categoryId: adventure.id,
+      title: 'Berlin in June',
+      destination: 'Berlin, Germany',
+      startDate: '2025-06-06',
+      endDate: '2025-06-12',
+      notes: 'Street art, history and the best techno clubs in Europe.',
+      imageUri: null,
+      createdAt: now,
+    },
   ]);
 
   const allUserTrips = await db.select().from(trips).where(eq(trips.userId, demoUser.id));
   const parisTrip = allUserTrips.find((t) => t.title === 'Spring in Paris');
   const londonTrip = allUserTrips.find((t) => t.title === 'London City Break');
   const romeTrip = allUserTrips.find((t) => t.title === 'Roman Holiday');
+  const barcelonaTrip = allUserTrips.find((t) => t.title === 'Barcelona Long Weekend');
+  const berlinTrip = allUserTrips.find((t) => t.title === 'Berlin in June');
 
-  if (!parisTrip || !londonTrip || !romeTrip) return;
+  if (!parisTrip || !londonTrip || !romeTrip || !barcelonaTrip || !berlinTrip) return;
 
   await db.insert(tripPhotos).values([
     { tripId: parisTrip.id, uri: 'seeded:Paris', caption: 'Seine riverbanks at golden hour', createdAt: now },
@@ -415,5 +440,11 @@ export async function seedPastTripsAndPhotosIfEmpty() {
     { tripId: romeTrip.id, uri: 'seeded:Rome', caption: 'Colosseum in winter light', createdAt: now },
     { tripId: romeTrip.id, uri: 'seeded:Rome', caption: 'Trastevere evening', createdAt: now },
     { tripId: romeTrip.id, uri: 'seeded:Rome', caption: 'Pasta at a local trattoria', createdAt: now },
+    { tripId: barcelonaTrip.id, uri: 'seeded:Barcelona_1', caption: 'Sagrada Família in the morning light', createdAt: now },
+    { tripId: barcelonaTrip.id, uri: 'seeded:Barcelona_2', caption: 'Tapas and vermouth at the Boqueria', createdAt: now },
+    { tripId: barcelonaTrip.id, uri: 'seeded:Barcelona_3', caption: 'Golden hour on Barceloneta beach', createdAt: now },
+    { tripId: berlinTrip.id, uri: 'seeded:Berlin_1', caption: 'Brandenburg Gate on a sunny afternoon', createdAt: now },
+    { tripId: berlinTrip.id, uri: 'seeded:Berlin_2', caption: 'Street art along the East Side Gallery', createdAt: now },
+    { tripId: berlinTrip.id, uri: 'seeded:Berlin_3', caption: 'Currywurst at Alexanderplatz', createdAt: now },
   ]);
 }

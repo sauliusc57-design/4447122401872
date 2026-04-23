@@ -31,6 +31,12 @@ const SEEDED_ASSETS: Record<string, any> = {
   'seeded:Paris': require('../../assets/images/trips/Paris.jpg'),
   'seeded:London': require('../../assets/images/trips/London.jpg'),
   'seeded:Rome': require('../../assets/images/trips/Rome.jpg'),
+  'seeded:Barcelona_1': require('../../assets/images/trips/barcelona_memory1.jpg'),
+  'seeded:Barcelona_2': require('../../assets/images/trips/barcelona_memory2.jpg'),
+  'seeded:Barcelona_3': require('../../assets/images/trips/barcelona_memory3.jpg'),
+  'seeded:Berlin_1': require('../../assets/images/trips/berlin_memory1.jpg'),
+  'seeded:Berlin_2': require('../../assets/images/trips/berlin_memory2.jpg'),
+  'seeded:Berlin_3': require('../../assets/images/trips/berlin_memory3.jpg'),
 };
 
 const SEEDED_TITLE_ASSETS: Record<string, any> = {
@@ -40,6 +46,8 @@ const SEEDED_TITLE_ASSETS: Record<string, any> = {
   'Spring in Paris': require('../../assets/images/trips/Paris.jpg'),
   'London City Break': require('../../assets/images/trips/London.jpg'),
   'Roman Holiday': require('../../assets/images/trips/Rome.jpg'),
+  'Barcelona Long Weekend': require('../../assets/images/trips/Barcelona.jpg'),
+  'Berlin in June': require('../../assets/images/trips/Berlin.jpg'),
 };
 
 function resolvePhotoSource(uri: string): any {

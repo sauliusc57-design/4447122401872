@@ -71,12 +71,6 @@ export default function LoginScreen() {
           <Text style={styles.link}>Create a new account</Text>
         </Link>
 
-        {/* Pre-filled credentials hint so anyone can try the app without registering. */}
-        <View style={styles.demoBox}>
-          <Text style={styles.demoTitle}>Demo account</Text>
-          <Text style={styles.demoText}>Email: demo@planner.com</Text>
-          <Text style={styles.demoText}>Password: demo123</Text>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -110,23 +104,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     textAlign: 'center',
-  },
-  demoBox: {
-    marginTop: 24,
-    backgroundColor: '#FFFAF4',
-    borderWidth: 1,
-    borderColor: '#E8D5B7',
-    borderRadius: 12,
-    padding: 14,
-  },
-  demoTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#2C1F0E',
-    marginBottom: 6,
-  },
-  demoText: {
-    fontSize: 14,
-    color: '#5C4A2E',
   },
 });
