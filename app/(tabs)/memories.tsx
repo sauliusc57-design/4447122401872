@@ -28,9 +28,15 @@ type Category = typeof categories.$inferSelect;
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const SEEDED_ASSETS: Record<string, any> = {
-  'seeded:Paris': require('../../assets/images/trips/Paris.jpg'),
-  'seeded:London': require('../../assets/images/trips/London.jpg'),
-  'seeded:Rome': require('../../assets/images/trips/Rome.jpg'),
+  'seeded:Paris_1': require('../../assets/images/trips/paris_memory1.jpg'),
+  'seeded:Paris_2': require('../../assets/images/trips/paris_memory2.jpg'),
+  'seeded:Paris_3': require('../../assets/images/trips/paris_memory3.jpg'),
+  'seeded:London_1': require('../../assets/images/trips/london_memory1.jpg'),
+  'seeded:London_2': require('../../assets/images/trips/london_memory2.jpg'),
+  'seeded:London_3': require('../../assets/images/trips/london_memory3.jpg'),
+  'seeded:Rome_1': require('../../assets/images/trips/rome_memory1.jpg'),
+  'seeded:Rome_2': require('../../assets/images/trips/rome_memory2.jpg'),
+  'seeded:Rome_3': require('../../assets/images/trips/rome_memory3.jpg'),
   'seeded:Barcelona_1': require('../../assets/images/trips/barcelona_memory1.jpg'),
   'seeded:Barcelona_2': require('../../assets/images/trips/barcelona_memory2.jpg'),
   'seeded:Barcelona_3': require('../../assets/images/trips/barcelona_memory3.jpg'),

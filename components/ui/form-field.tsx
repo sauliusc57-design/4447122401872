@@ -1,7 +1,9 @@
 // Reusable labelled text input. Supports single-line, multiline, and secure (password) modes.
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ThemeContext } from '@/app/_layout';
+import { darkColors, lightColors } from '@/constants/theme';
 
 type Props = {
   label: string;
@@ -23,21 +25,25 @@ export default function FormField({
   keyboardType = 'default',
 }: Props) {
   const [hidden, setHidden] = useState(secureTextEntry);
+  const themeCtx = useContext(ThemeContext);
+  const isDark = themeCtx?.isDark ?? false;
+  const c = isDark ? darkColors : lightColors;
 
   return (
     <View style={styles.wrapper}>
-      <Text style={styles.label}>{label}</Text>
-      <View style={[styles.inputRow, multiline && styles.multilineRow]}>
+      <Text style={[styles.label, { color: c.label }]}>{label}</Text>
+      <View style={[styles.inputRow, multiline && styles.multilineRow, { backgroundColor: c.card, borderColor: c.border }]}>
         <TextInput
           accessibilityLabel={label}
           placeholder={placeholder ?? label}
+          placeholderTextColor={c.placeholder}
           value={value}
           onChangeText={onChangeText}
           multiline={multiline}
           textAlignVertical={multiline ? 'top' : 'auto'}
           secureTextEntry={hidden}
           keyboardType={keyboardType}
-          style={[styles.input, multiline && styles.multilineInput, secureTextEntry && styles.inputFlex]}
+          style={[styles.input, multiline && styles.multilineInput, secureTextEntry && styles.inputFlex, { color: c.text }]}
         />
         {secureTextEntry && (
           <Pressable
@@ -45,7 +51,7 @@ export default function FormField({
             style={styles.eyeButton}
             accessibilityLabel={hidden ? 'Show password' : 'Hide password'}
           >
-            <Ionicons name={hidden ? 'eye-off' : 'eye'} size={18} color="#9C886C" />
+            <Ionicons name={hidden ? 'eye-off' : 'eye'} size={18} color={c.icon} />
           </Pressable>
         )}
       </View>
@@ -58,7 +64,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   label: {
-    color: '#5C4A2E',
     fontSize: 13,
     fontWeight: '600',
     marginBottom: 6,
@@ -66,8 +71,6 @@ const styles = StyleSheet.create({
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFAF4',
-    borderColor: '#E8D5B7',
     borderRadius: 10,
     borderWidth: 1,
   },

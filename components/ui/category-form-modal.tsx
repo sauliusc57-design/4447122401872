@@ -1,7 +1,9 @@
 import FormField from '@/components/ui/form-field';
 import PrimaryButton from '@/components/ui/primary-button';
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ThemeContext } from '@/app/_layout';
+import { darkColors, lightColors } from '@/constants/theme';
 
 // Available colour swatches for a category
 const PRESET_COLORS = [
@@ -46,6 +48,10 @@ export default function CategoryFormModal({
   const [color, setColor] = useState(initialColor);
   const [icon, setIcon] = useState(initialIcon);
 
+  const themeCtx = useContext(ThemeContext);
+  const isDark = themeCtx?.isDark ?? false;
+  const c = isDark ? darkColors : lightColors;
+
   // Reset form fields each time the modal opens with fresh initial values
   useEffect(() => {
     if (visible) {
@@ -67,9 +73,9 @@ export default function CategoryFormModal({
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.overlay}>
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, { backgroundColor: c.background }]}>
           <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-            <Text style={styles.title}>Category</Text>
+            <Text style={[styles.title, { color: c.title }]}>Category</Text>
 
             <FormField
               label="Name"
@@ -78,24 +84,24 @@ export default function CategoryFormModal({
               placeholder="e.g. Sightseeing"
             />
 
-            <Text style={styles.sectionLabel}>Colour</Text>
+            <Text style={[styles.sectionLabel, { color: c.subtitle }]}>Colour</Text>
             <View style={styles.swatchGrid}>
-              {PRESET_COLORS.map((c) => (
+              {PRESET_COLORS.map((preset) => (
                 <Pressable
-                  key={c}
+                  key={preset}
                   accessibilityRole="button"
-                  accessibilityLabel={`Select colour ${c}`}
-                  onPress={() => setColor(c)}
+                  accessibilityLabel={`Select colour ${preset}`}
+                  onPress={() => setColor(preset)}
                   style={[
                     styles.swatch,
-                    { backgroundColor: c },
-                    color === c && styles.swatchSelected,
+                    { backgroundColor: preset },
+                    color === preset && [styles.swatchSelected, { borderColor: c.title }],
                   ]}
                 />
               ))}
             </View>
 
-            <Text style={styles.sectionLabel}>Icon</Text>
+            <Text style={[styles.sectionLabel, { color: c.subtitle }]}>Icon</Text>
             <View style={styles.iconGrid}>
               {PRESET_ICONS.map((item) => (
                 <Pressable
@@ -105,6 +111,7 @@ export default function CategoryFormModal({
                   onPress={() => setIcon(item.value)}
                   style={[
                     styles.iconChip,
+                    { borderColor: c.border, backgroundColor: c.card },
                     icon === item.value && { borderColor: color, backgroundColor: color + '22' },
                   ]}
                 >
@@ -132,7 +139,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: '#FDF6EE',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '85%',
@@ -144,13 +150,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#2C1F0E',
     marginBottom: 16,
   },
   sectionLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#5C4A2E',
     marginBottom: 8,
     marginTop: 4,
   },
@@ -167,7 +171,6 @@ const styles = StyleSheet.create({
   },
   swatchSelected: {
     borderWidth: 3,
-    borderColor: '#2C1F0E',
   },
   iconGrid: {
     flexDirection: 'row',
@@ -180,10 +183,8 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: '#E8D5B7',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFAF4',
   },
   iconEmoji: {
     fontSize: 22,

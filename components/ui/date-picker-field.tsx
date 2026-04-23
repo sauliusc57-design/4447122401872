@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ThemeContext } from '@/app/_layout';
+import { darkColors, lightColors } from '@/constants/theme';
 
 type Props = {
   label: string;
@@ -21,6 +23,9 @@ function formatDisplay(date: Date): string {
 // DatePickerField — cross-platform date picker that uses a native dialog on Android and a modal spinner on iOS
 export default function DatePickerField({ label, value, onChange }: Props) {
   const [iosVisible, setIosVisible] = useState(false);
+  const themeCtx = useContext(ThemeContext);
+  const isDark = themeCtx?.isDark ?? false;
+  const c = isDark ? darkColors : lightColors;
 
   // Open the platform-appropriate date picker
   const open = () => {
@@ -39,25 +44,32 @@ export default function DatePickerField({ label, value, onChange }: Props) {
 
   return (
     <View style={styles.wrapper}>
-      <Text style={styles.label}>{label}</Text>
-      <Pressable style={styles.field} onPress={open} accessibilityLabel={label}>
-        <Text style={styles.value}>{formatDisplay(value)}</Text>
-        <Ionicons name="calendar-outline" size={18} color="#9C886C" />
+      <Text style={[styles.label, { color: c.label }]}>{label}</Text>
+      <Pressable
+        style={[styles.field, { backgroundColor: c.card, borderColor: c.border }]}
+        onPress={open}
+        accessibilityLabel={label}
+      >
+        <Text style={[styles.value, { color: c.value }]}>{formatDisplay(value)}</Text>
+        <Ionicons name="calendar-outline" size={18} color={c.icon} />
       </Pressable>
 
       {/* iOS-only bottom-sheet inline calendar modal */}
       {Platform.OS === 'ios' && (
         <Modal visible={iosVisible} transparent animationType="slide">
           <View style={styles.overlay}>
-            <View style={styles.sheet}>
-              <Pressable onPress={() => setIosVisible(false)} style={styles.doneRow}>
-                <Text style={styles.doneText}>Done</Text>
+            <View style={[styles.sheet, { backgroundColor: c.card }]}>
+              <Pressable
+                onPress={() => setIosVisible(false)}
+                style={[styles.doneRow, { borderBottomColor: c.iosDoneBorder }]}
+              >
+                <Text style={[styles.doneText, { color: c.iosDoneText }]}>Done</Text>
               </Pressable>
               <DateTimePicker
                 value={value}
                 mode="date"
                 display="inline"
-                themeVariant="light"
+                themeVariant={isDark ? 'dark' : 'light'}
                 onChange={(_e, date) => {
                   if (date) onChange(date);
                 }}
@@ -75,7 +87,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   label: {
-    color: '#5C4A2E',
     fontSize: 13,
     fontWeight: '600',
     marginBottom: 6,
@@ -84,15 +95,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFAF4',
-    borderColor: '#E8D5B7',
     borderRadius: 10,
     borderWidth: 1,
     paddingHorizontal: 12,
     paddingVertical: 12,
   },
   value: {
-    color: '#2C1F0E',
     fontSize: 15,
   },
   overlay: {
@@ -101,7 +109,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: '#FFFAF4',
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     paddingBottom: 32,
@@ -110,11 +117,9 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     paddingHorizontal: 20,
     paddingVertical: 14,
-    borderBottomColor: '#E8D5B7',
     borderBottomWidth: 1,
   },
   doneText: {
-    color: '#2C1F0E',
     fontSize: 16,
     fontWeight: '600',
   },

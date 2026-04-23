@@ -7,11 +7,13 @@ import { db } from '@/db/client';
 import { fetchUserCategories } from '@/db/queries';
 import { categories, trips } from '@/db/schema';
 import { pickImageFromLibrary } from '@/lib/image-picker';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useContext, useEffect, useState } from 'react';
 import {
   Alert,
   Image,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -19,20 +21,22 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { toDateString } from '@/lib/date-utils';
-import { AuthContext, ToastContext } from '../_layout';
+import { AuthContext, ThemeContext, ToastContext } from '../_layout';
+import { darkColors, lightColors } from '@/constants/theme';
 
 type Category = typeof categories.$inferSelect;
 
-// Add Trip screen — create a new trip with image, category and date range
 export default function AddTripScreen() {
   const router = useRouter();
   const auth = useContext(AuthContext);
   const toast = useContext(ToastContext);
+  const themeCtx = useContext(ThemeContext);
+  const isDark = themeCtx?.isDark ?? false;
+  const c = isDark ? darkColors : lightColors;
   const currentUser = auth?.currentUser ?? null;
 
   const today = new Date();
 
-  // Form field state
   const [title, setTitle] = useState('');
   const [city, setCity] = useState('');
   const [country, setCountry] = useState('');
@@ -44,7 +48,6 @@ export default function AddTripScreen() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
 
-  // Fetch all user categories and refresh the picker list
   const loadCategories = async () => {
     if (!currentUser) return;
     const rows = await fetchUserCategories(currentUser.id);
@@ -52,14 +55,12 @@ export default function AddTripScreen() {
     return rows;
   };
 
-  // Load categories on mount and default-select the first one
   useEffect(() => {
     loadCategories().then((rows) => {
       if (rows && rows.length > 0) setSelectedCategoryId(rows[0].id);
     });
   }, []);
 
-  // Insert a new inline category then auto-select it in the picker
   const handleAddCategory = async (name: string, color: string, icon: string) => {
     if (!currentUser) return;
     await db.insert(categories).values({ userId: currentUser.id, name, color, icon });
@@ -69,13 +70,11 @@ export default function AddTripScreen() {
     setCategoryModalVisible(false);
   };
 
-  // Open the device image library and store the selected URI
   const pickImage = async () => {
     const uri = await pickImageFromLibrary();
     if (uri) setImageUri(uri);
   };
 
-  // Validate inputs then insert the new trip record
   const saveTrip = async () => {
     if (!title.trim() || !city.trim()) {
       Alert.alert('Missing details', 'Please complete the title and city.');
@@ -87,7 +86,6 @@ export default function AddTripScreen() {
       return;
     }
 
-    // Combine city and optional country into a single destination string
     const destination = country.trim()
       ? `${city.trim()}, ${country.trim()}`
       : city.trim();
@@ -111,10 +109,14 @@ export default function AddTripScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: c.background }]}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Add Trip</Text>
-        <Text style={styles.subtitle}>Create a new holiday trip.</Text>
+        <Pressable style={styles.backButton} onPress={() => router.back()} accessibilityLabel="Go back">
+          <Ionicons name="chevron-back" size={26} color={c.title} />
+        </Pressable>
+
+        <Text style={[styles.title, { color: c.title }]}>Add Trip</Text>
+        <Text style={[styles.subtitle, { color: c.subtitle }]}>Create a new holiday trip.</Text>
 
         <PrimaryButton label="Choose Trip Image" onPress={pickImage} />
 
@@ -125,7 +127,7 @@ export default function AddTripScreen() {
             resizeMode="cover"
           />
         ) : (
-          <Text style={styles.helperText}>No image selected yet.</Text>
+          <Text style={[styles.helperText, { color: c.placeholder }]}>No image selected yet.</Text>
         )}
 
         <CategoryPicker
@@ -200,20 +202,22 @@ export default function AddTripScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FDF6EE',
   },
   content: {
     padding: 18,
   },
+  backButton: {
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+    padding: 4,
+  },
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#2C1F0E',
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 15,
-    color: '#5C4A2E',
     marginBottom: 18,
   },
   previewImage: {
@@ -224,7 +228,6 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   helperText: {
-    color: '#9C886C',
     marginTop: 10,
     marginBottom: 14,
   },

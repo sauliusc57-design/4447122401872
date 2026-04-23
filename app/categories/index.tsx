@@ -4,11 +4,13 @@ import { db } from '@/db/client';
 import { fetchUserCategories } from '@/db/queries';
 import { activities, categories, trips } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useContext, useEffect, useState } from 'react';
-import { Alert, FlatList, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AuthContext, ToastContext } from '../_layout';
+import { AuthContext, ThemeContext, ToastContext } from '../_layout';
+import { darkColors, lightColors } from '@/constants/theme';
 
 type Category = typeof categories.$inferSelect;
 
@@ -17,18 +19,19 @@ const ICON_MAP: Record<string, string> = Object.fromEntries(
   PRESET_ICONS.map(({ value, label }) => [value, label])
 );
 
-// Manage Categories screen — list, add, edit, and delete user categories
 export default function ManageCategoriesScreen() {
   const router = useRouter();
   const auth = useContext(AuthContext);
   const toast = useContext(ToastContext);
+  const themeCtx = useContext(ThemeContext);
+  const isDark = themeCtx?.isDark ?? false;
+  const c = isDark ? darkColors : lightColors;
   const currentUser = auth?.currentUser ?? null;
 
   const [rows, setRows] = useState<Category[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
 
-  // Fetch all categories belonging to the current user
   const load = async () => {
     if (!currentUser) return;
     const data = await fetchUserCategories(currentUser.id);
@@ -37,19 +40,16 @@ export default function ManageCategoriesScreen() {
 
   useEffect(() => { load(); }, []);
 
-  // Open the modal in create mode
   const openAdd = () => {
     setEditing(null);
     setModalVisible(true);
   };
 
-  // Open the modal pre-filled with an existing category
   const openEdit = (cat: Category) => {
     setEditing(cat);
     setModalVisible(true);
   };
 
-  // Insert a new category or update an existing one depending on editing state
   const handleSave = async (name: string, color: string, icon: string) => {
     if (!currentUser) return;
 
@@ -93,7 +93,6 @@ export default function ManageCategoriesScreen() {
       return;
     }
 
-    // Confirm before permanently deleting the category
     Alert.alert('Delete Category', `Delete "${cat.name}"?`, [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -109,27 +108,30 @@ export default function ManageCategoriesScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: c.background }]}>
       <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>Categories</Text>
-          <Text style={styles.subtitle}>Manage your activity categories.</Text>
+        <Pressable style={styles.backButton} onPress={() => router.back()} accessibilityLabel="Go back">
+          <Ionicons name="chevron-back" size={26} color={c.title} />
+        </Pressable>
+        <View style={styles.headerText}>
+          <Text style={[styles.title, { color: c.title }]}>Categories</Text>
+          <Text style={[styles.subtitle, { color: c.subtitle }]}>Manage your activity categories.</Text>
         </View>
         <PrimaryButton label="+ Add" onPress={openAdd} compact />
       </View>
 
       {rows.length === 0 ? (
-        <Text style={styles.empty}>No categories yet. Tap + Add to create one.</Text>
+        <Text style={[styles.empty, { color: c.placeholder }]}>No categories yet. Tap + Add to create one.</Text>
       ) : (
         <FlatList
           data={rows}
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
-            <View style={styles.row}>
+            <View style={[styles.row, { backgroundColor: c.card, borderColor: c.border }]}>
               <View style={[styles.dot, { backgroundColor: item.color }]} />
               <Text style={styles.iconEmoji}>{ICON_MAP[item.icon] ?? '📌'}</Text>
-              <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
+              <Text style={[styles.name, { color: c.title }]} numberOfLines={1}>{item.name}</Text>
               <View style={styles.actions}>
                 <PrimaryButton
                   label="Edit"
@@ -150,10 +152,6 @@ export default function ManageCategoriesScreen() {
         />
       )}
 
-      <View style={styles.backWrapper}>
-        <PrimaryButton label="Back" variant="secondary" onPress={() => router.back()} />
-      </View>
-
       <CategoryFormModal
         visible={modalVisible}
         initialName={editing?.name ?? ''}
@@ -169,24 +167,27 @@ export default function ManageCategoriesScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FDF6EE',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 18,
     paddingTop: 16,
     paddingBottom: 12,
+    gap: 8,
+  },
+  backButton: {
+    padding: 4,
+  },
+  headerText: {
+    flex: 1,
   },
   title: {
     fontSize: 26,
     fontWeight: '700',
-    color: '#2C1F0E',
   },
   subtitle: {
     fontSize: 14,
-    color: '#5C4A2E',
     marginTop: 2,
   },
   list: {
@@ -197,10 +198,8 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFAF4',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E8D5B7',
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
@@ -219,7 +218,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontWeight: '600',
-    color: '#2C1F0E',
   },
   actions: {
     flexDirection: 'row',
@@ -229,14 +227,9 @@ const styles = StyleSheet.create({
     width: 8,
   },
   empty: {
-    color: '#9C886C',
     fontSize: 15,
     textAlign: 'center',
     marginTop: 40,
     paddingHorizontal: 18,
-  },
-  backWrapper: {
-    padding: 18,
-    paddingTop: 8,
   },
 });

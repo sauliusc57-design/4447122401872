@@ -6,29 +6,32 @@ import { db } from '@/db/client';
 import { fetchUserCategories } from '@/db/queries';
 import { activities, categories, trips } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useContext, useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { parseDateString, toDateString } from '@/lib/date-utils';
-import { AuthContext, ToastContext } from '../../../../_layout';
+import { AuthContext, ThemeContext, ToastContext } from '../../../../_layout';
+import { darkColors, lightColors } from '@/constants/theme';
 
 type Activity = typeof activities.$inferSelect;
 type Category = typeof categories.$inferSelect;
 type Trip = typeof trips.$inferSelect;
 
-// Edit Activity screen — loads an existing activity and saves changes
 export default function EditActivityScreen() {
   const { activityId } = useLocalSearchParams<{ activityId: string }>();
   const router = useRouter();
   const auth = useContext(AuthContext);
   const toast = useContext(ToastContext);
+  const themeCtx = useContext(ThemeContext);
+  const isDark = themeCtx?.isDark ?? false;
+  const c = isDark ? darkColors : lightColors;
 
   const [loading, setLoading] = useState(true);
   const [existingActivity, setExistingActivity] = useState<Activity | null>(null);
   const [categoryRows, setCategoryRows] = useState<Category[]>([]);
 
-  // Form field state
   const [title, setTitle] = useState('');
   const [activityDate, setActivityDate] = useState<Date>(new Date());
   const [durationMinutes, setDurationMinutes] = useState('');
@@ -40,7 +43,6 @@ export default function EditActivityScreen() {
 
   const { currentUser } = auth;
 
-  // Load the activity record and user categories on mount
   useEffect(() => {
     const loadActivity = async () => {
       if (!activityId) {
@@ -55,7 +57,6 @@ export default function EditActivityScreen() {
       ]);
 
       const foundActivity = activityRows[0] ?? null;
-      // Only allow editing activities that belong to a trip owned by this user
       const userTripIds = userTrips.map((trip: Trip) => trip.id);
 
       if (!foundActivity || !userTripIds.includes(foundActivity.tripId)) {
@@ -65,7 +66,6 @@ export default function EditActivityScreen() {
         return;
       }
 
-      // Populate form fields with existing activity data
       setExistingActivity(foundActivity);
       setCategoryRows(categoryList);
       setTitle(foundActivity.title);
@@ -81,7 +81,6 @@ export default function EditActivityScreen() {
     loadActivity();
   }, [activityId, currentUser.id]);
 
-  // Validate inputs then write the updated activity to the database
   const saveActivity = async () => {
     if (!existingActivity) return;
 
@@ -121,25 +120,35 @@ export default function EditActivityScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <Text style={styles.message}>Loading activity...</Text>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: c.background }]}>
+        <Pressable style={styles.backButton} onPress={() => router.back()} accessibilityLabel="Go back">
+          <Ionicons name="chevron-back" size={26} color={c.title} />
+        </Pressable>
+        <Text style={[styles.message, { color: c.message }]}>Loading activity...</Text>
       </SafeAreaView>
     );
   }
 
   if (!existingActivity) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <Text style={styles.message}>Activity not found.</Text>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: c.background }]}>
+        <Pressable style={styles.backButton} onPress={() => router.back()} accessibilityLabel="Go back">
+          <Ionicons name="chevron-back" size={26} color={c.title} />
+        </Pressable>
+        <Text style={[styles.message, { color: c.message }]}>Activity not found.</Text>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: c.background }]}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Edit Activity</Text>
-        <Text style={styles.subtitle}>Update your saved activity.</Text>
+        <Pressable style={styles.backButton} onPress={() => router.back()} accessibilityLabel="Go back">
+          <Ionicons name="chevron-back" size={26} color={c.title} />
+        </Pressable>
+
+        <Text style={[styles.title, { color: c.title }]}>Edit Activity</Text>
+        <Text style={[styles.subtitle, { color: c.subtitle }]}>Update your saved activity.</Text>
 
         <CategoryPicker
           categories={categoryRows}
@@ -154,15 +163,18 @@ export default function EditActivityScreen() {
 
         <FormField label="Duration (minutes)" value={durationMinutes} onChangeText={setDurationMinutes} placeholder="120" keyboardType="numeric" />
 
-        <Text style={styles.label}>Status</Text>
+        <Text style={[styles.label, { color: c.label }]}>Status</Text>
         <View style={styles.chipRow}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Select planned status"
             onPress={() => setStatus('planned')}
-            style={[styles.chip, status === 'planned' && styles.chipSelected]}
+            style={[
+              styles.chip,
+              { backgroundColor: status === 'planned' ? '#E8873A' : c.card, borderColor: status === 'planned' ? '#E8873A' : c.border },
+            ]}
           >
-            <Text style={[styles.chipText, status === 'planned' && styles.chipTextSelected]}>
+            <Text style={[styles.chipText, { color: status === 'planned' ? '#FFFFFF' : c.chipText }]}>
               Planned
             </Text>
           </Pressable>
@@ -171,9 +183,12 @@ export default function EditActivityScreen() {
             accessibilityRole="button"
             accessibilityLabel="Select completed status"
             onPress={() => setStatus('completed')}
-            style={[styles.chip, status === 'completed' && styles.chipSelected]}
+            style={[
+              styles.chip,
+              { backgroundColor: status === 'completed' ? '#E8873A' : c.card, borderColor: status === 'completed' ? '#E8873A' : c.border },
+            ]}
           >
-            <Text style={[styles.chipText, status === 'completed' && styles.chipTextSelected]}>
+            <Text style={[styles.chipText, { color: status === 'completed' ? '#FFFFFF' : c.chipText }]}>
               Completed
             </Text>
           </Pressable>
@@ -200,24 +215,25 @@ export default function EditActivityScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FDF6EE',
   },
   content: {
     padding: 18,
   },
+  backButton: {
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+    padding: 4,
+  },
   title: {
-    color: '#2C1F0E',
     fontSize: 28,
     fontWeight: '700',
     marginBottom: 4,
   },
   subtitle: {
-    color: '#5C4A2E',
     fontSize: 15,
     marginBottom: 18,
   },
   label: {
-    color: '#5C4A2E',
     fontSize: 13,
     fontWeight: '600',
     marginBottom: 6,
@@ -230,24 +246,14 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   chip: {
-    backgroundColor: '#FFFAF4',
-    borderColor: '#E8D5B7',
     borderWidth: 1,
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
-  chipSelected: {
-    backgroundColor: '#E8873A',
-    borderColor: '#E8873A',
-  },
   chipText: {
-    color: '#2C1F0E',
     fontSize: 14,
     fontWeight: '500',
-  },
-  chipTextSelected: {
-    color: '#FFFFFF',
   },
   buttonGroup: {
     marginTop: 8,
@@ -256,7 +262,6 @@ const styles = StyleSheet.create({
     height: 10,
   },
   message: {
-    color: '#5C4A2E',
     fontSize: 16,
     textAlign: 'center',
     paddingTop: 24,

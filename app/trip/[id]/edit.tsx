@@ -8,12 +8,14 @@ import { fetchUserCategories } from '@/db/queries';
 import { categories, trips } from '@/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { pickImageFromLibrary } from '@/lib/image-picker';
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useContext, useEffect, useState } from 'react';
-import { Alert, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { parseDateString, toDateString } from '@/lib/date-utils';
-import { AuthContext, ToastContext } from '../../_layout';
+import { AuthContext, ThemeContext, ToastContext } from '../../_layout';
+import { darkColors, lightColors } from '@/constants/theme';
 
 type Trip = typeof trips.$inferSelect;
 type Category = typeof categories.$inferSelect;
@@ -25,12 +27,14 @@ const seededImages: Record<string, any> = {
   'Week in London': require('../../../assets/images/trips/London.jpg'),
 };
 
-// Edit Trip screen — loads an existing trip and saves changes
 export default function EditTripScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const auth = useContext(AuthContext);
   const toast = useContext(ToastContext);
+  const themeCtx = useContext(ThemeContext);
+  const isDark = themeCtx?.isDark ?? false;
+  const c = isDark ? darkColors : lightColors;
 
   const today = new Date();
 
@@ -39,7 +43,6 @@ export default function EditTripScreen() {
   const [categoryRows, setCategoryRows] = useState<Category[]>([]);
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
 
-  // Form field state
   const [title, setTitle] = useState('');
   const [city, setCity] = useState('');
   const [country, setCountry] = useState('');
@@ -53,7 +56,6 @@ export default function EditTripScreen() {
 
   const { currentUser } = auth;
 
-  // Load the trip record and user categories on mount
   useEffect(() => {
     const loadTrip = async () => {
       if (!id) {
@@ -77,7 +79,6 @@ export default function EditTripScreen() {
       if (trip) {
         setTitle(trip.title);
 
-        // Split stored "City, Country" destination back into separate fields
         const commaIdx = trip.destination.indexOf(', ');
         if (commaIdx >= 0) {
           setCity(trip.destination.slice(0, commaIdx));
@@ -100,14 +101,12 @@ export default function EditTripScreen() {
     loadTrip();
   }, [id, currentUser.id]);
 
-  // Refresh the category list and return the updated rows
   const reloadCategories = async () => {
     const rows = await fetchUserCategories(currentUser.id);
     setCategoryRows(rows);
     return rows;
   };
 
-  // Insert a new inline category then auto-select it in the picker
   const handleAddCategory = async (name: string, color: string, icon: string) => {
     await db.insert(categories).values({ userId: currentUser.id, name, color, icon });
     const rows = await reloadCategories();
@@ -116,13 +115,11 @@ export default function EditTripScreen() {
     setCategoryModalVisible(false);
   };
 
-  // Open the device image library and store the selected URI
   const pickImage = async () => {
     const uri = await pickImageFromLibrary();
     if (uri) setImageUri(uri);
   };
 
-  // Validate inputs then write the updated trip to the database
   const saveTrip = async () => {
     if (!title.trim() || !city.trim()) {
       Alert.alert('Missing details', 'Please complete the title and city.');
@@ -134,7 +131,6 @@ export default function EditTripScreen() {
       return;
     }
 
-    // Combine city and optional country into a single destination string
     const destination = country.trim()
       ? `${city.trim()}, ${country.trim()}`
       : city.trim();
@@ -158,29 +154,38 @@ export default function EditTripScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <Text style={styles.message}>Loading trip...</Text>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: c.background }]}>
+        <Pressable style={styles.backButton} onPress={() => router.back()} accessibilityLabel="Go back">
+          <Ionicons name="chevron-back" size={26} color={c.title} />
+        </Pressable>
+        <Text style={[styles.message, { color: c.message }]}>Loading trip...</Text>
       </SafeAreaView>
     );
   }
 
   if (!existingTrip) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <Text style={styles.message}>Trip not found.</Text>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: c.background }]}>
+        <Pressable style={styles.backButton} onPress={() => router.back()} accessibilityLabel="Go back">
+          <Ionicons name="chevron-back" size={26} color={c.title} />
+        </Pressable>
+        <Text style={[styles.message, { color: c.message }]}>Trip not found.</Text>
       </SafeAreaView>
     );
   }
 
-  // Use a seeded demo image as fallback when no user-selected image exists
   const fallbackImage = seededImages[existingTrip.title];
   const hasValidLocalImage = typeof imageUri === 'string' && imageUri.length > 0;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: c.background }]}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Edit Trip</Text>
-        <Text style={styles.subtitle}>Update your saved trip details.</Text>
+        <Pressable style={styles.backButton} onPress={() => router.back()} accessibilityLabel="Go back">
+          <Ionicons name="chevron-back" size={26} color={c.title} />
+        </Pressable>
+
+        <Text style={[styles.title, { color: c.title }]}>Edit Trip</Text>
+        <Text style={[styles.subtitle, { color: c.subtitle }]}>Update your saved trip details.</Text>
 
         <PrimaryButton label="Choose New Image" onPress={pickImage} />
 
@@ -189,7 +194,7 @@ export default function EditTripScreen() {
         ) : fallbackImage ? (
           <Image source={fallbackImage} style={styles.previewImage} resizeMode="cover" />
         ) : (
-          <Text style={styles.helperText}>No image selected yet.</Text>
+          <Text style={[styles.helperText, { color: c.placeholder }]}>No image selected yet.</Text>
         )}
 
         <CategoryPicker
@@ -201,15 +206,10 @@ export default function EditTripScreen() {
         />
 
         <FormField label="Trip Title" value={title} onChangeText={setTitle} placeholder="Weekend in Paris" />
-
         <FormField label="City" value={city} onChangeText={setCity} placeholder="Paris" />
-
         <FormField label="Country (optional)" value={country} onChangeText={setCountry} placeholder="France" />
-
         <DatePickerField label="Start Date" value={startDate} onChange={setStartDate} />
-
         <DatePickerField label="End Date" value={endDate} onChange={setEndDate} />
-
         <FormField
           label="Notes"
           value={notes}
@@ -236,20 +236,22 @@ export default function EditTripScreen() {
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: '#FDF6EE',
     flex: 1,
   },
   content: {
     padding: 18,
   },
+  backButton: {
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+    padding: 4,
+  },
   title: {
-    color: '#2C1F0E',
     fontSize: 28,
     fontWeight: '700',
     marginBottom: 4,
   },
   subtitle: {
-    color: '#5C4A2E',
     fontSize: 15,
     marginBottom: 18,
   },
@@ -261,7 +263,6 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   helperText: {
-    color: '#9C886C',
     marginTop: 10,
     marginBottom: 14,
   },
@@ -272,7 +273,6 @@ const styles = StyleSheet.create({
     height: 10,
   },
   message: {
-    color: '#5C4A2E',
     fontSize: 16,
     textAlign: 'center',
     paddingTop: 24,

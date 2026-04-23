@@ -1,4 +1,7 @@
+import { useContext } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ThemeContext } from '@/app/_layout';
+import { darkColors, lightColors } from '@/constants/theme';
 
 export type CategoryOption = {
   id: number;
@@ -23,9 +26,13 @@ export default function CategoryPicker({
   onAdd,
   label = 'Category',
 }: Props) {
+  const themeCtx = useContext(ThemeContext);
+  const isDark = themeCtx?.isDark ?? false;
+  const c = isDark ? darkColors : lightColors;
+
   return (
     <View style={styles.wrapper}>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.label, { color: c.label }]}>{label}</Text>
 
       <ScrollView
         horizontal
@@ -43,22 +50,19 @@ export default function CategoryPicker({
               onPress={() => onSelect(category.id)}
               style={[
                 styles.chip,
-                { borderColor: category.color },
-                // Fill the chip with the category colour when selected
-                isSelected && { backgroundColor: category.color },
+                { borderColor: category.color, backgroundColor: isSelected ? category.color : c.card },
               ]}
             >
               <View
                 style={[
                   styles.dot,
-                  // Switch dot to white so it stays visible against the filled background
                   { backgroundColor: isSelected ? '#FFFFFF' : category.color },
                 ]}
               />
               <Text
                 style={[
                   styles.chipText,
-                  isSelected && styles.chipTextSelected,
+                  { color: isSelected ? '#FFFFFF' : c.chipText },
                 ]}
               >
                 {category.name}
@@ -67,15 +71,14 @@ export default function CategoryPicker({
           );
         })}
 
-        {/* Optional "+ New" chip that opens the category creation modal */}
         {onAdd && (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Add new category"
             onPress={onAdd}
-            style={styles.addChip}
+            style={[styles.addChip, { backgroundColor: c.background, borderColor: c.border }]}
           >
-            <Text style={styles.addChipText}>+ New</Text>
+            <Text style={[styles.addChipText, { color: c.subtitle }]}>+ New</Text>
           </Pressable>
         )}
       </ScrollView>
@@ -88,7 +91,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   label: {
-    color: '#5C4A2E',
     fontSize: 13,
     fontWeight: '600',
     marginBottom: 6,
@@ -104,7 +106,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: '#FFFAF4',
     marginRight: 8,
   },
   dot: {
@@ -114,27 +115,20 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   chipText: {
-    color: '#2C1F0E',
     fontSize: 14,
     fontWeight: '500',
-  },
-  chipTextSelected: {
-    color: '#FFFFFF',
   },
   addChip: {
     alignItems: 'center',
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#E8D5B7',
     borderStyle: 'dashed',
     flexDirection: 'row',
     paddingHorizontal: 14,
     paddingVertical: 10,
-    backgroundColor: '#FDF6EE',
     marginRight: 8,
   },
   addChipText: {
-    color: '#5C4A2E',
     fontSize: 14,
     fontWeight: '600',
   },
