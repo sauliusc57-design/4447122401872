@@ -45,7 +45,7 @@ export default function DatePickerField({ label, value, onChange }: Props) {
         <Ionicons name="calendar-outline" size={18} color="#9C886C" />
       </Pressable>
 
-      {/* iOS-only bottom-sheet spinner modal */}
+      {/* iOS-only bottom-sheet inline calendar modal */}
       {Platform.OS === 'ios' && (
         <Modal visible={iosVisible} transparent animationType="slide">
           <View style={styles.overlay}>
@@ -56,7 +56,8 @@ export default function DatePickerField({ label, value, onChange }: Props) {
               <DateTimePicker
                 value={value}
                 mode="date"
-                display="spinner"
+                display="inline"
+                themeVariant="light"
                 onChange={(_e, date) => {
                   if (date) onChange(date);
                 }}
